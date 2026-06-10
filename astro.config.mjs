@@ -7,6 +7,8 @@ export default defineConfig({
   site: 'https://cppforall.com',
   trailingSlash: 'always',
   integrations: [react(), sitemap()],
+  // instant chapter switching: hover/viewport prefetch of rail links
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   vite: {
     server: {
       // cross-origin isolation in dev — the Wasmer toolchain needs SharedArrayBuffer

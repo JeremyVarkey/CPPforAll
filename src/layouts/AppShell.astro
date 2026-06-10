@@ -11,6 +11,7 @@ import '@fontsource-variable/source-serif-4/wght-italic.css';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/cpp-styles.css';
 
+import { ClientRouter } from 'astro:transitions';
 import Rail from '../components/Rail.astro';
 import Icon from '../components/Icon.astro';
 import chapters from '../generated/chapters.json';
@@ -40,6 +41,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <ClientRouter />
     <script is:inline>
       /* theme + rail state before first paint — no flash */
       (function () {
@@ -58,14 +60,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <div class="app" id="app">
-      <script is:inline>
-        /* runs synchronously before the rail paints */
-        if (document.documentElement.dataset.rail === 'collapsed') {
-          document.getElementById('app').classList.add('collapsed');
-        }
-      </script>
-
-      <!-- collapsed strip (desktop) -->
+      <!-- collapsed strip (desktop) — visibility driven by html[data-rail] -->
       <div class="strip">
         <button class="icon-btn" data-action="expand" aria-label="Expand sidebar" title="Expand sidebar">
           <Icon name="sidebar" />
@@ -75,7 +70,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
       <div class="scrim" data-action="drawer-close"></div>
 
-      <aside class="rail" aria-label="Chapters">
+      <aside class="rail" aria-label="Chapters" transition:persist="rail" transition:name="rail">
         <Rail chapters={chapters} current={current} />
       </aside>
 
@@ -124,18 +119,19 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     </style>
 
     <script is:inline>
-      (function () {
-        var app = document.getElementById('app');
-        function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      if (!window.__cppShellWired) {
+        window.__cppShellWired = true;
+        var save = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
+        var app = function () { return document.getElementById('app'); };
 
         document.addEventListener('click', function (e) {
           var el = e.target.closest('[data-action]');
           if (el) {
             var a = el.dataset.action;
-            if (a === 'collapse') { app.classList.add('collapsed'); document.documentElement.dataset.rail = 'collapsed'; save('cpp-rail', 'collapsed'); }
-            if (a === 'expand') { app.classList.remove('collapsed'); delete document.documentElement.dataset.rail; save('cpp-rail', 'open'); }
-            if (a === 'drawer-open') { app.classList.add('drawer-open'); }
-            if (a === 'drawer-close') { app.classList.remove('drawer-open'); }
+            if (a === 'collapse') { document.documentElement.dataset.rail = 'collapsed'; save('cpp-rail', 'collapsed'); }
+            if (a === 'expand') { delete document.documentElement.dataset.rail; save('cpp-rail', 'open'); }
+            if (a === 'drawer-open') { app().classList.add('drawer-open'); }
+            if (a === 'drawer-close') { app().classList.remove('drawer-open'); }
             if (a === 'theme') {
               var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
               document.documentElement.dataset.theme = next;
@@ -182,10 +178,24 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           }
         });
 
-        /* keep the active chapter row in view */
-        var active = document.querySelector('.ch-row.active');
-        if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
-      })();
+        /* soft navigation (ClientRouter): the rail persists, so its active row
+           must be re-pointed at the new URL on every page load */
+        var syncRail = function () {
+          var path = location.pathname;
+          document.querySelectorAll('[data-ch-row]').forEach(function (row) {
+            var href = row.getAttribute('href');
+            var on = path === href || path.indexOf(href) === 0;
+            row.classList.toggle('active', on);
+            if (on) row.setAttribute('aria-current', 'page');
+            else row.removeAttribute('aria-current');
+          });
+          var active = document.querySelector('.ch-row.active');
+          if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+          app() && app().classList.remove('drawer-open');
+        };
+        document.addEventListener('astro:page-load', syncRail);
+        syncRail();
+      }
     </script>
   </body>
 </html>

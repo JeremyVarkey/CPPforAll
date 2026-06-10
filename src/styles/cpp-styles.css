@@ -60,7 +60,7 @@ body{
   transition:width .18s var(--ease), flex-basis .18s var(--ease), transform .18s var(--ease);
   overflow:hidden;
 }
-.app.collapsed .rail{width:0;flex-basis:0;border-right:0;}
+html[data-rail="collapsed"] .rail{width:0;flex-basis:0;border-right:0;}
 .rail-inner{width:var(--rail-w);height:100%;display:flex;flex-direction:column;flex:0 0 var(--rail-w);}
 
 .rail-head{padding:18px 16px 12px;display:flex;flex-direction:column;gap:14px;}
@@ -135,7 +135,7 @@ body{
   width:52px;flex:0 0 52px;background:var(--surface);border-right:1px solid var(--hairline);
   display:none;flex-direction:column;align-items:center;gap:6px;padding:18px 0; /* [delta] toggled by .collapsed */
 }
-.app.collapsed .strip{display:flex;}
+html[data-rail="collapsed"] .strip{display:flex;}
 
 /* ---------- Canvas ---------- */
 .canvas{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;position:relative;}
@@ -144,7 +144,7 @@ body{
   display:flex;align-items:center;gap:14px;padding:0 26px;background:var(--canvas);z-index:5;
 }
 .expand-zone{display:none;align-items:center;gap:10px;} /* [delta] toggled by .collapsed */
-.app.collapsed .expand-zone{display:flex;}
+html[data-rail="collapsed"] .expand-zone{display:flex;}
 .crumb{font-size:13px;color:var(--ink2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .crumb b{color:var(--ink);}
 .top-spacer{flex:1;}
@@ -364,9 +364,9 @@ a.callout.xref:hover{border-color:var(--info);}
 @media (max-width:860px){
   .rail{position:fixed;z-index:40;top:0;bottom:0;left:0;transform:translateX(-100%);box-shadow:0 12px 40px rgba(0,0,0,.18);width:var(--rail-w);flex-basis:var(--rail-w);}
   .app.drawer-open .rail{transform:translateX(0);}
-  .app.collapsed .rail{width:var(--rail-w);flex-basis:var(--rail-w);border-right:1px solid var(--hairline);}
-  .strip,.app.collapsed .strip{display:none;}
-  .expand-zone,.app.collapsed .expand-zone{display:none;}
+  html[data-rail="collapsed"] .rail{width:var(--rail-w);flex-basis:var(--rail-w);border-right:1px solid var(--hairline);}
+  .strip,html[data-rail="collapsed"] .strip{display:none;}
+  .expand-zone,html[data-rail="collapsed"] .expand-zone{display:none;}
   .hamb{display:grid;}
   .scrim{display:block;position:fixed;inset:0;background:rgba(20,20,19,.34);z-index:35;opacity:0;pointer-events:none;transition:opacity .2s;}
   .app.drawer-open .scrim{opacity:1;pointer-events:auto;}
