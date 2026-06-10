@@ -1,8 +1,8 @@
 ---
 /** Chapter rail — brand, search, the 29 chapter rows, footer. Rows are real
- *  links (static HTML); only the search filter hydrates (RailSearch island). */
+ *  links (static HTML); the search filter is a small vanilla script so notes
+ *  pages ship zero framework JS (React arrives only with the Phase B runner). */
 import Icon from './Icon.astro';
-import RailSearch from './RailSearch.tsx';
 
 interface Chapter {
   num: number; slug: string; title: string; tag: string; hasDrill: boolean;
@@ -22,7 +22,13 @@ const { chapters, current } = Astro.props;
         <Icon name="sidebar" />
       </button>
     </div>
-    <RailSearch client:idle total={chapters.length} />
+    <div class="search">
+      <Icon name="search" />
+      <input id="rail-search" placeholder="Search chapters…" aria-label={`Search ${chapters.length} chapters`} autocomplete="off" />
+      <button class="clear" id="rail-search-clear" aria-label="Clear search" hidden>
+        <Icon name="x" />
+      </button>
+    </div>
   </div>
   <div class="rail-label" id="rail-label">All chapters</div>
   <div class="chapters" id="chapter-list">
@@ -48,3 +54,29 @@ const { chapters, current } = Astro.props;
     <span class="foot-meta">29 chapters · free &amp; open</span>
   </div>
 </div>
+
+<script is:inline>
+  (function () {
+    var input = document.getElementById('rail-search');
+    var clear = document.getElementById('rail-search-clear');
+    var label = document.getElementById('rail-label');
+    var none = document.getElementById('no-results');
+    if (!input) return;
+    function apply() {
+      var q = input.value.trim().toLowerCase();
+      var rows = document.querySelectorAll('[data-ch-row]');
+      var shown = 0;
+      rows.forEach(function (row) {
+        var hit = !q || (row.dataset.search || '').indexOf(q) !== -1;
+        row.hidden = !hit;
+        if (hit) shown++;
+      });
+      label.textContent = q ? shown + ' result' + (shown === 1 ? '' : 's') : 'All chapters';
+      none.hidden = shown !== 0;
+      none.textContent = 'No chapters match “' + input.value + '”.';
+      clear.hidden = !q;
+    }
+    input.addEventListener('input', apply);
+    clear.addEventListener('click', function () { input.value = ''; apply(); input.focus(); });
+  })();
+</script>
