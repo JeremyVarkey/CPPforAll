@@ -1,0 +1,75 @@
+---
+/** Chapter notes page — the "book" view. Static HTML; lesson anchors are
+ *  preserved from the source notes' own TOC slugs. */
+import AppShell from '../../../layouts/AppShell.astro';
+import chapters from '../../../generated/chapters.json';
+
+export function getStaticPaths() {
+  return chapters.map((c) => ({ params: { slug: c.slug } }));
+}
+
+const { slug } = Astro.params;
+const chapter = chapters.find((c) => c.slug === slug)!;
+const notes = (await import(`../../../generated/notes/chapter-${slug}.json`)).default;
+const lessonWord = notes.lessons.length === 1 ? 'lesson' : 'lessons';
+---
+
+<AppShell
+  current={chapter.num}
+  view="notes"
+  title={`Chapter ${chapter.num} — ${chapter.title} · CPPforAll`}
+  description={`Chapter ${chapter.num} of CPPforAll's free C++ course: ${chapter.title}. ${notes.lessons.length} ${lessonWord}, with a hands-on lab.`}
+>
+  <article class="reader swap">
+    <div class="ch-kicker">Chapter {chapter.num} · {chapter.tag}</div>
+    <h1 class="ch-display">{chapter.title}</h1>
+    <div class="ch-sub">
+      <span>{notes.readingMinutes} min read</span>
+      <span class="dot"></span>
+      <span>{notes.lessons.length} {lessonWord}</span>
+      {chapter.hasDrill && (
+        <>
+          <span class="dot"></span>
+          <a href={`/chapters/${chapter.slug}/exercise/`}>lab: {chapter.project}</a>
+        </>
+      )}
+    </div>
+
+    <nav class="toc" aria-label="Lessons in this chapter">
+      <div class="toc-label">In this chapter</div>
+      <ol>
+        {notes.lessons.map((l: { anchor: string; title: string }) => (
+          <li><a href={`#${l.anchor}`}>{l.title}</a></li>
+        ))}
+      </ol>
+    </nav>
+
+    {notes.introHtml && <div set:html={notes.introHtml} />}
+    {notes.lessons.map((l: { anchor: string; title: string; html: string }) => (
+      <section set:html={l.html} />
+    ))}
+
+    {chapter.hasDrill && (
+      <aside class="next-lab">
+        <div>
+          <div class="nl-kicker">Ready to practice?</div>
+          <p>Put this chapter to work in the lab: <strong>{chapter.project}</strong>.</p>
+        </div>
+        <a class="btn btn-primary" href={`/chapters/${chapter.slug}/exercise/`}>Open the lab</a>
+      </aside>
+    )}
+  </article>
+</AppShell>
+
+<style>
+  .toc{border:1px solid var(--hairline);background:var(--surface);border-radius:var(--r-card);padding:16px 20px;margin:0 0 34px;}
+  .toc-label{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .toc ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;counter-reset:none;}
+  .toc li{font-family:var(--sans);font-size:13.5px;line-height:1.45;}
+  .toc a{color:var(--ink2);text-decoration:none;}
+  .toc a:hover{color:var(--accent-press);}
+  :global([data-theme='dark']) .toc a:hover{color:var(--accent);}
+  .next-lab{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid var(--hairline);background:var(--surface);border-radius:var(--r-panel);padding:20px 24px;margin-top:46px;flex-wrap:wrap;}
+  .next-lab .nl-kicker{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+  .next-lab p{font-family:var(--serif);font-size:16px;color:var(--ink2);margin:0;}
+</style>

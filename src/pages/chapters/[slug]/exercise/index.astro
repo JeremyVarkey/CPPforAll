@@ -1,0 +1,133 @@
+---
+/** Exercise page — the lab view: handout card, file tabs, reserved Run slot. */
+import AppShell from '../../../../layouts/AppShell.astro';
+import Icon from '../../../../components/Icon.astro';
+import chapters from '../../../../generated/chapters.json';
+
+export function getStaticPaths() {
+  return chapters.filter((c) => c.hasDrill).map((c) => ({ params: { slug: c.slug } }));
+}
+
+const { slug } = Astro.params;
+const chapter = chapters.find((c) => c.slug === slug)!;
+const drill = (await import(`../../../../generated/drills/chapter-${slug}.json`)).default;
+
+type DrillFile = { kind: string; name: string; path: string; lang: string | null; code: string; codeHtml: string };
+const files: DrillFile[] = drill.files;
+const langLabel = (l: string | null) => (l === 'cpp' ? 'C++' : l === 'make' ? 'Makefile' : null);
+---
+
+<AppShell
+  current={chapter.num}
+  view="code"
+  title={`${drill.project} — Chapter ${chapter.num} lab · CPPforAll`}
+  description={`Hands-on C++ lab for chapter ${chapter.num} (${chapter.title}): ${drill.project}. Starter code, tests, and a reference solution.`}
+>
+  <div class="exercise swap">
+    <div class="handout">
+      <div class="ex-kicker">Exercise · Chapter {chapter.num}</div>
+      <h1>{drill.project}</h1>
+      <div class="ex-sum" set:html={drill.summaryHtml} />
+      <div class="ex-cols">
+        <div class="ex-block">
+          <h3><Icon name="list" /> Your tasks</h3>
+          {drill.tasks.length > 0
+            ? <ol class="ex-tasks">{drill.tasks.map((t: string) => <li set:html={t} />)}</ol>
+            : <div class="ex-prose" set:html={drill.tasksHtml} />}
+        </div>
+        <div class="ex-block">
+          <h3><Icon name="target" /> Success criteria</h3>
+          {drill.criteria.length > 0
+            ? (
+              <ul class="ex-crit">
+                {drill.criteria.map((c: string) => (
+                  <li><Icon name="check" /><span set:html={c} /></li>
+                ))}
+              </ul>
+            )
+            : <div class="ex-prose" set:html={drill.criteriaHtml} />}
+        </div>
+      </div>
+      <div class="ex-more">
+        <details>
+          <summary>Concepts practiced</summary>
+          <div class="d-body" set:html={drill.sections.concepts} />
+        </details>
+        <details>
+          <summary>Constraints</summary>
+          <div class="d-body" set:html={drill.sections.constraints} />
+        </details>
+        <details>
+          <summary>Build &amp; run locally</summary>
+          <div class="d-body" set:html={drill.sections.buildRun} />
+        </details>
+        <details>
+          <summary>Hints</summary>
+          <div class="d-body" set:html={drill.sections.hints} />
+        </details>
+        <details>
+          <summary>Stretch goals</summary>
+          <div class="d-body" set:html={drill.sections.stretch} />
+        </details>
+      </div>
+    </div>
+
+    <div class="files-head" role="tablist" aria-label="Exercise files">
+      {files.map((f, i) => (
+        <button
+          class={'file-tab' + (i === 0 ? ' on' : '')}
+          data-pane={`pane-${f.kind}-${f.name.replace(/[^a-zA-Z0-9]/g, '-')}`}
+          role="tab"
+          aria-selected={i === 0 ? 'true' : 'false'}
+        >
+          <span class={`kindtag ${f.kind}`}>{f.kind}</span>
+          {f.name}
+        </button>
+      ))}
+    </div>
+    {files.map((f, i) => (
+      <div
+        class="file-pane"
+        id={`pane-${f.kind}-${f.name.replace(/[^a-zA-Z0-9]/g, '-')}`}
+        hidden={i !== 0}
+      >
+        <div class="codebox" style="border-radius: 0 12px 12px 12px; margin-top: 0;">
+          <div class="codebox-head">
+            <div class="cb-dots"><i></i><i></i><i></i></div>
+            <span class="cb-file">{f.path}</span>
+            {langLabel(f.lang) && <span class="cb-lang">{langLabel(f.lang)}</span>}
+            <div class="cb-actions">
+              <button class="cb-btn" data-cb="copy" aria-label={`Copy ${f.name}`}>
+                <Icon name="copy" /><span>Copy</span>
+              </button>
+              <button class="cb-btn" data-cb="download" data-file={f.name} aria-label={`Download ${f.name}`}>
+                <Icon name="download" /><span>Download</span>
+              </button>
+            </div>
+          </div>
+          <div class="codebox-body">
+            <pre set:html={f.codeHtml} />
+          </div>
+        </div>
+      </div>
+    ))}
+
+    <div class="run-slot">
+      <div class="run-fake"><Icon name="play" /> Run</div>
+      <div class="run-fake" style="background: var(--success);"><Icon name="check" /> Submit</div>
+      <div class="run-note">
+        <b>Run in your browser — coming soon</b>
+        For now: copy or download the files and use <code>make test</code> locally
+        (see “Build &amp; run locally” above).
+      </div>
+      <div class="results-strip"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</AppShell>
+
+<style>
+  .ex-prose :global(p){font-family:var(--serif);font-size:15px;line-height:1.6;color:var(--ink);margin:0 0 10px;}
+  .ex-prose :global(code){font-family:var(--mono);font-size:.84em;background:var(--subtle);padding:1px 5px;border-radius:4px;}
+  .ex-prose :global(.snippet){margin:12px 0;}
+  .run-slot .run-note code{font-family:var(--mono);font-size:.9em;background:var(--subtle);padding:1px 5px;border-radius:4px;}
+</style>
