@@ -13,8 +13,25 @@ import { renderToTree, renderMarkdown, toHtml, toString } from './lib/markdown.m
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const NOTES = path.join(ROOT, 'content/notes');
+const AUTHORED = path.join(ROOT, 'src/content-authored');
 const OVERLAYS = path.join(ROOT, 'src/content-overlays');
 const OUT = path.join(ROOT, 'src/generated/notes');
+
+/**
+ * Authored content (src/content-authored/chapter-NN.md) is the SITE's own
+ * lecture-grade text, written by validated agents using the vendored notes
+ * as guidance. When present it replaces the vendored chapter; the vendored
+ * file remains the factual reference. Same format contract: H1 title,
+ * `## NN.M — Title` lesson headings (anchors must stay stable).
+ */
+async function chapterSource(num, fileName) {
+  try {
+    const authored = await readFile(path.join(AUTHORED, fileName), 'utf8');
+    return { md: authored, authored: true };
+  } catch {
+    return { md: await readFile(path.join(NOTES, fileName), 'utf8'), authored: false };
+  }
+}
 
 /** Load a chapter's enrichment overlay (agent-authored, committed) if present. */
 async function loadOverlay(num) {
@@ -97,7 +114,7 @@ export async function buildNotes() {
   const results = [];
   for (const f of files) {
     const num = Number(f.match(/chapter-(\d{2})/)[1]);
-    const md = await readFile(path.join(NOTES, f), 'utf8');
+    const { md, authored } = await chapterSource(num, f);
     const h1 = md.match(/^#\s+(.+)$/m)?.[1] ?? `Chapter ${num}`;
     const title = h1.replace(/^Chapter\s+\d+\s*[—–-]\s*/i, '').trim();
     const words = md.split(/\s+/).length;
@@ -130,6 +147,7 @@ export async function buildNotes() {
       num,
       title,
       source,
+      authored,
       readingMinutes,
       leadHtml,
       introHtml: toHtml({ type: 'root', children: intro }, { allowDangerousHtml: true }),
