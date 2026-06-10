@@ -1,0 +1,3 @@
+Items: 3 x $5
+Subtotal: $15
+Change: $5

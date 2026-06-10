@@ -1,0 +1,15 @@
+# Built drill/exercise artifacts — always rebuildable via `make`, never committed.
+*.o
+*.out
+a.out
+*.dSYM/
+# Per-exercise binaries (no extension) and unit-test runners.
+app
+run
+runner
+run-starter
+run-solution
+cin_run
+demo
+ns_demo
+global_demo
