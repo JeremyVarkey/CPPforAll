@@ -1,0 +1,28 @@
+{
+  "chapter": 23,
+  "lead": "Real programs are webs of objects that *use*, *contain*, and *refer to* each other — and getting the ownership story wrong leads to crashes, leaks, and subtle lifetime bugs. This chapter gives you a precise vocabulary — composition, aggregation, association, dependency — and maps each concept to the C++ construct that expresses it correctly. By the end you will be able to look at any data member and say definitively whether the class owns it, borrows it, or just uses it temporarily.",
+  "tag": "relationships",
+  "aids": [
+    {
+      "lesson": "233---aggregation",
+      "title": "Why reference_wrapper, and what .get() does",
+      "md": "You cannot store a plain `T&` in `std::vector` because references are not assignable — the vector needs to copy-assign elements when it reallocates. `std::reference_wrapper<T>` is a thin wrapper that holds a pointer internally but behaves like a reference: it is assignable, so it can live in a vector. When you need the underlying `T&` back, call `.get()` — `roster.front().get().name()` — or let an implicit conversion do it in contexts that already expect a `T&`."
+    },
+    {
+      "lesson": "233---aggregation",
+      "title": "Aggregation lifetime trap: the aggregate must not outlive its parts",
+      "md": "Because an aggregate does not own its parts, it is your responsibility as the designer to ensure the parts live at least as long as the aggregate does. The `makeBadGroup()` example is the canonical mistake: the `StudyGroup` is returned but its `Student` was a local variable — the reference inside the group is dangling the moment the function returns. Always ask: \"Who owns the target, and can I guarantee it outlives every aggregate that references it?\""
+    },
+    {
+      "lesson": "237---stdinitializer_list",
+      "title": "Brace init picks the list constructor, parentheses pick the size constructor",
+      "md": "`std::vector<int> v(5)` calls the size constructor and gives you a vector of five zeroes; `std::vector<int> v{5}` calls the initializer-list constructor and gives you a vector with one element whose value is `5`. The rule is: if a class has an `std::initializer_list` constructor and brace initialization can invoke it, it will — even when another constructor might seem like a better match. Use braces when the values inside *are* the elements; use parentheses when the argument is a size, capacity, or other constructor parameter."
+    },
+    {
+      "lesson": "237---stdinitializer_list",
+      "title": "Delegating to a size constructor: use parentheses, not braces",
+      "md": "Inside an `std::initializer_list` constructor, if you delegate to a `(int length)` constructor using braces — `: TinyArray { static_cast<int>(values.size()) }` — the brace-prefers-list-constructor rule kicks in and the compiler tries to call the `std::initializer_list` constructor again, producing infinite recursion or a compile error. Delegate with direct initialization syntax instead: `: TinyArray(static_cast<int>(values.size()))` to unambiguously reach the size constructor."
+    }
+  ],
+  "xrefs": []
+}

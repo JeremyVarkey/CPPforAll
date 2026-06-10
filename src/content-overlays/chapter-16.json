@@ -1,0 +1,39 @@
+{
+  "chapter": 16,
+  "lead": "`std::vector` is the workhorse container of modern C++: a resizable, contiguous array you can grow at runtime, pass cleanly across function boundaries, and iterate with a single readable loop. By the end of this chapter you will be able to build, populate, and process vectors of any element type — and sidestep the signed/unsigned indexing pitfalls that trip up almost every newcomer.",
+  "tag": "vectors",
+  "aids": [
+    {
+      "lesson": "162--introduction-to-stdvector-and-list-constructors",
+      "title": "Braces vs parentheses: one element or five?",
+      "md": "The constructor you call depends on which bracket you use: `std::vector<int> a { 5 };` creates **one** element (the value 5), while `std::vector<int> b(5);` creates **five** elements (all zero-initialized). Braces prefer list construction — the value 5 becomes an element. Parentheses invoke the count constructor — 5 means \"give me five slots\". This is one of the sharpest edges on `std::vector` initialization."
+    },
+    {
+      "lesson": "163--stdvector-and-the-unsigned-length-and-subscript-problem",
+      "title": "Why -1 becomes a huge number",
+      "md": "When a signed `int` with value `-1` is compared to `std::size_t`, C++ converts the signed value to unsigned — and `-1` wraps to the largest possible `size_t` (roughly 18 quintillion on a 64-bit system). This means a loop condition like `i < values.size()` can silently spin forever or skip entirely depending on the sign of `i`. The fix: either use `std::size_t` as your loop variable, or reach for `std::ssize()` (C++20) to get a signed length."
+    },
+    {
+      "lesson": "1610--stdvector-resizing-and-capacity",
+      "title": "reserve changes capacity, not length",
+      "md": "`reserve(n)` allocates internal storage for at least `n` elements but does **not** create any elements — `size()` stays 0. Writing `v.reserve(10); v[0] = 1;` is undefined behavior because the vector still holds zero elements. Use `resize(n)` to actually create elements you can index, or use `push_back` to grow the vector one element at a time after reserving."
+    },
+    {
+      "lesson": "168--range-based-for-loops-for-each",
+      "title": "auto, const auto&, or auto& — which to pick",
+      "md": "`auto x` copies each element (harmless for `int`, expensive for strings). `const auto& x` reads each element without copying — the right default for read-only work. `auto& x` gives you a reference to the real element so that assignments and modifications write back to the vector. Forgetting the `&` in a mutation loop compiles silently but every write is discarded."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "163--stdvector-and-the-unsigned-length-and-subscript-problem",
+      "to": 10,
+      "md": "The signed/unsigned mismatch warning is the same conversion-and-narrowing issue introduced in Chapter 10 (`static_cast` and type aliases)."
+    },
+    {
+      "lesson": "165--returning-stdvector-and-an-introduction-to-move-semantics",
+      "to": 12,
+      "md": "Move semantics builds on the reference and pointer model from Chapter 12: instead of copying all elements into new storage, the destination takes ownership of the source's existing allocation."
+    }
+  ]
+}

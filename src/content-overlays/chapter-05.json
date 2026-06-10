@@ -1,0 +1,34 @@
+{
+  "chapter": 5,
+  "lead": "This chapter introduces the two tools that keep values from changing — `const` and `constexpr` — and the two string types you will reach for in every subsequent chapter: `std::string` for text you own and modify, and `std::string_view` for text you only need to read. By the end you will be able to name every important constant in a program, understand the difference between values known at compile time and values fixed only at runtime, and choose correctly between `std::string` and `std::string_view` as function parameters and return types.",
+  "tag": "const & strings",
+  "aids": [
+    {
+      "lesson": "56--constexpr-variables",
+      "title": "const vs constexpr: the key difference",
+      "md": "Both `const` and `constexpr` prevent reassignment, but they answer different questions. `const` says \"this value will not change after initialization\" — the value may still come from a runtime call like `readAge()`. `constexpr` says \"this value must be known at compile time\" — the compiler will reject it if the initializer cannot be evaluated during compilation. When you need a named constant for things like array sizes or template arguments, reach for `constexpr`, not just `const`."
+    },
+    {
+      "lesson": "59--stdstring_view-part-2",
+      "title": "Dangling views: the owner must outlive the viewer",
+      "md": "A `std::string_view` is just a pointer and a length pointing into memory owned by someone else. If that owner is destroyed — a local `std::string` goes out of scope, or a temporary created by `\"text\"s` is discarded — the view's pointer goes dangling and any use is undefined behavior. Safe views point at C-style string literals (which live for the whole program) or at a `std::string` that you can guarantee outlives the view."
+    },
+    {
+      "lesson": "53--numeral-systems-decimal-binary-hexadecimal-and-octal",
+      "title": "The leading-zero octal trap",
+      "md": "A leading `0` on an integer literal changes its base to octal: `012` is decimal 10, not 12. This is a silent, legal C++ pitfall — the compiler will not warn. In modern code, avoid leading zeros on integer literals unless you intend octal, and prefer the explicit `0b` prefix when you want binary."
+    },
+    {
+      "lesson": "57--introduction-to-stdstring",
+      "title": "The leftover-newline problem with getline",
+      "md": "After `std::cin >> someInt`, a `'\\n'` character remains in the input buffer. A subsequent `std::getline` call reads that leftover newline immediately and returns an empty string — a very common first-use bug. Fix it by writing `std::getline(std::cin >> std::ws, name)`: the `std::ws` manipulator discards leading whitespace (including that newline) before `getline` starts collecting text."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "51--constant-variables-named-constants",
+      "to": 2,
+      "md": "Object-like macros (`#define MAX 30`) introduced in Chapter 2 are the older alternative to named constants; this lesson explains why `constexpr` variables are preferred over them."
+    }
+  ]
+}

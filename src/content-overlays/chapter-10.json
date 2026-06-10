@@ -1,0 +1,39 @@
+{
+  "chapter": 10,
+  "lead": "C++ performs many type conversions silently — and some of them lose data without warning. This chapter teaches you to recognize when a conversion is happening, when it is safe, and when you must either prevent it with brace initialization or document it explicitly with `static_cast`. You will also learn to name complex types with `using` aliases and let the compiler deduce types with `auto`, both of which make large C++ programs significantly easier to read and maintain.",
+  "tag": "conversions",
+  "aids": [
+    {
+      "lesson": "103--numeric-conversions",
+      "title": "Signed-to-unsigned wrap: the silent flip",
+      "md": "Converting a negative `int` to `unsigned int` does not produce an error — it wraps to a very large positive value. This is why comparing a signed loop counter against `std::string::length()` (which returns an unsigned type) can flip the result of a `<` comparison: the negative signed value becomes enormous once treated as unsigned. Prefer a signed counter, or cast `.length()` to `int` with `static_cast` and document the conversion."
+    },
+    {
+      "lesson": "104--narrowing-conversions-list-initialization-and-constexpr-initializers",
+      "title": "Cast the operand, not the result",
+      "md": "Writing `static_cast<double>(a / b)` casts *after* the division, so integer truncation already happened — `7 / 2` is `3` before the cast ever runs. To get a real-valued result, cast *one operand before* the divide: `static_cast<double>(a) / b`. Once one operand is `double`, the usual arithmetic conversions promote the other automatically."
+    },
+    {
+      "lesson": "108--type-deduction-for-objects-using-the-auto-keyword",
+      "title": "auto + string literal is not std::string",
+      "md": "`auto s { \"hello\" };` deduces `const char*`, not `std::string`. If you need a `std::string`, write the type explicitly: `std::string s { \"hello\" };`. Also note that `auto` silently drops top-level `const` — if `a` is `const int`, `auto b { a }` deduces `int`; you must write `const auto b { a }` to keep the qualifier."
+    },
+    {
+      "lesson": "107--typedefs-and-type-aliases",
+      "title": "Aliases rename, they do not restrict",
+      "md": "`using StudentId = int;` and `using CourseId = int;` are both `int` — the compiler accepts `CourseId c { studentIdValue };` without complaint. Aliases improve readability and reduce repetition, but they do not create distinct types that the compiler can use to catch mix-ups. That stronger guarantee requires a `struct` wrapper, covered in Chapter 13."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "104--narrowing-conversions-list-initialization-and-constexpr-initializers",
+      "to": 1,
+      "md": "Brace initialization, first introduced in Chapter 1 as the preferred initialization style, gets its deepest justification here: the compiler rejects narrowing conversions inside `{}`, catching data-loss bugs at compile time."
+    },
+    {
+      "lesson": "106--explicit-type-conversion-casting-and-static_cast",
+      "to": 4,
+      "md": "`static_cast` was first used in Chapter 4 to convert between fundamental types; this lesson formalizes when and why to prefer it over C-style casts, and introduces it as a documentation tool for intentional narrowing."
+    }
+  ]
+}

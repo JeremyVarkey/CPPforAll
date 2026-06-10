@@ -28,8 +28,19 @@ costs + security burden)**. Design Phase-1 UI as interactive "islands" so a Run/
 button can slot in **without a rewrite**.
 
 ## Tech decisions
-- **Framework:** Astro + Starlight — Markdown/MDX content, per-chapter sidebar, built-in
-  search, dark mode, and interactive islands for the future runtime.
+- **Framework:** plain Astro + React islands (**Starlight dropped** — the bespoke Claude
+  Design shell outgrew docs chrome). Pages are static HTML (`/chapters/NN/` notes,
+  `/chapters/NN/exercise/` labs); only rail search + theme hydrate. The design source of
+  truth is the committed handoff bundle in `design/` — match it pixel-faithfully; its
+  chapter data is placeholder, all UI binds to `src/generated/chapters.json`.
+- **Content pipeline:** `npm run content` (auto pre-dev/pre-build) → `scripts/build-content.mjs`
+  (index → notes → drills → validate). Markdown engine: `scripts/lib/markdown.mjs` (unified +
+  Shiki custom warm-dark theme; `**Label:**` blockquotes → tip/warn callouts; lesson anchors
+  preserved from source TOC slugs). Generated output in `src/generated/` (gitignored).
+  Agent enrichment lives in `src/content-overlays/chapter-NN.json` ("marked study aids"
+  policy: lead + aids + xrefs only, validated, visually distinct on page).
+- **Editor (Phase B):** CodeMirror 6, not Monaco. Runner: Wasmer SDK clang in a Web Worker,
+  COOP/COEP via staticwebapp.config.json; grader manifests in `public/graders/`.
 - **Host:** Azure Static Web Apps (free tier). Deploy via **GitHub Actions** (push → live);
   the SWA deploy token lives in GitHub/Azure secrets — **never paste secrets into chat.**
 - **Domain:** Squarespace-registered. At deploy, Jeremy adds the CNAME/TXT records in the
@@ -57,8 +68,12 @@ On the **Visual Studio Enterprise Subscription** (Option B — always pass `--su
   `ns1-09.azure-dns.com` · `ns2-09.azure-dns.net` · `ns3-09.azure-dns.org` · `ns4-09.azure-dns.info`
 - ✅ **Delegation live:** cppforall.com nameservers now point to Azure DNS (verified via
   Google + Cloudflare resolvers and an authoritative check). All records managed via `az`.
-- Not yet created: the Static Web App (waits for a buildable Astro site) and the
-  apex/www records + TLS (added after delegation resolves).
+- Static Web App: `cppforall` in `rg-cppforall` (Free tier), default hostname
+  `ambitious-grass-0d1b3c60f.7.azurestaticapps.net`. Deploys via
+  `.github/workflows/deploy.yml` on push to main (token in repo secret
+  `AZURE_STATIC_WEB_APPS_API_TOKEN`; rotate via `az staticwebapp secrets`).
+- Not yet done: apex/www DNS records + custom-domain TLS (the public launch step —
+  gated on the licensing pass, which has a clean sampled result already).
 
 ## Content source & pipeline
 **Single source of truth** (do not author content here directly — it lives upstream):

@@ -1,0 +1,39 @@
+{
+  "chapter": 17,
+  "lead": "Fixed-size arrays let you name a collection whose length is locked in at compile time, making it eligible for `constexpr` evaluation and immune to the accidental resizing that can bite a `std::vector`. This chapter covers `std::array` — the safe, standard-library choice — alongside the C-style arrays and pointer arithmetic that underpin both the language's history and the iterator model you will use in every algorithm from Chapter 18 onward.",
+  "tag": "arrays",
+  "aids": [
+    {
+      "lesson": "174--stdarray-of-class-types-and-brace-elision",
+      "title": "Why double braces appear",
+      "md": "Think of `std::array<T, N>` as a small struct that owns one plain C-array member inside it. Aggregate initialization therefore has two levels: one set of braces for the outer `std::array` object and one for its inner storage. When you omit the explicit element type (i.e. you write `std::array<CoverageCounter, 2>` and let the compiler know each initializer is a `CoverageCounter`), the compiler may need both brace layers — `{{ {row1}, {row2} }}` — to see the nested structure unambiguously. With scalar element types like `int`, brace elision flattens this to a single layer; with struct/class elements, when in doubt use the double-brace form."
+    },
+    {
+      "lesson": "178--c-style-array-decay",
+      "title": "Decay strips the length from the type",
+      "md": "A C-style array has type `int[N]`, which carries the length `N`. The moment that array is passed to a function or assigned to a pointer, it *decays*: the type shrinks to `int*`, and `N` is gone forever. This is why every C-style array function historically accepted a separate `count` parameter — once the array has decayed, `sizeof` inside the callee measures the pointer, not the array. `std::array` does not decay because it is a struct, not a raw language type; passing it by reference preserves the full type including the length."
+    },
+    {
+      "lesson": "179--pointer-arithmetic-and-subscripting",
+      "title": "Subscript is just offset-and-dereference",
+      "md": "`ptr[n]` is exactly `*(ptr + n)` — the compiler rewrites one into the other. This identity explains zero-indexing: `arr[0]` is `*(arr + 0)` which is `*arr`, requiring no offset at all for the first element. It also means you can subscript any pointer into an array, not only one that points to the start; `middle[-1]` is legal as long as the resulting address stays within the array bounds."
+    },
+    {
+      "lesson": "175--arrays-of-references-via-stdreference_wrapper",
+      "title": "Use .get() to reach through the wrapper",
+      "md": "`std::reference_wrapper<T>` stores a reference but is itself an object, so it can live in a container. The catch: assigning to the wrapper (`ref = y`) *reseats* it to point at `y` rather than modifying the referenced value — unlike a plain C++ reference which cannot be reseated. To read or modify the actual `T`, call `.get()`: `refs[0].get() = 11` modifies the original variable, while `refs[0] = other` would make the wrapper refer to `other` instead."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "173--passing-and-returning-stdarray",
+      "to": 12,
+      "md": "The pass-by-const-reference rule for `std::array` parameters is a direct application of the reference and const-reference conventions established in Chapter 12."
+    },
+    {
+      "lesson": "176--stdarray-and-enumerations",
+      "to": 13,
+      "md": "Using unscoped enum enumerators as array indices — and protecting enum-backed tables with `static_assert` — builds on the enum types introduced in Chapter 13."
+    }
+  ]
+}

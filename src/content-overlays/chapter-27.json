@@ -1,0 +1,44 @@
+{
+  "chapter": 27,
+  "lead": "C++ exceptions let the code that *detects* a failure be completely separate from the code that *handles* it — a clean separation that return codes cannot achieve once failures cross function boundaries. By the end of this chapter you will be able to read and write `throw`/`try`/`catch` correctly, understand what stack unwinding guarantees about cleanup, and use `noexcept` as a real contract rather than an annotation.",
+  "tag": "exceptions",
+  "aids": [
+    {
+      "lesson": "273--exceptions-functions-and-stack-unwinding",
+      "title": "Unwinding runs destructors — that's the whole RAII guarantee",
+      "md": "Think of the call stack as a stack of boxes, each box holding local objects. When an exception propagates upward, the runtime physically pops each box and calls the destructor of every object inside before moving to the next box. The guarantee is unconditional for any *caught* exception: every local in every unwound frame is destroyed in reverse order of construction. That is precisely why putting resource ownership in RAII objects (`std::unique_ptr`, `std::vector`, `std::fstream`) works — the destructor runs whether the frame exits normally *or* via an exception, so there is no cleanup code to forget."
+    },
+    {
+      "lesson": "275--exceptions-classes-and-inheritance",
+      "title": "Most-derived catch handler must come first",
+      "md": "Handlers are tested top-to-bottom; the first match wins and no later handler runs. Because `ConfigError` derives from `std::runtime_error`, a `catch (const std::runtime_error&)` placed above a `catch (const ConfigError&)` will silently swallow every `ConfigError` as a plain `runtime_error` — the specific handler is unreachable. The rule: always order from most-derived to most-base, the same direction you read a class hierarchy."
+    },
+    {
+      "lesson": "276--rethrowing-exceptions",
+      "title": "Bare `throw;` vs `throw error;` — slicing trap",
+      "md": "Inside a `catch (const std::exception& e)` block, `throw e;` copies `e` using its *static* type (`std::exception`), silently discarding any derived-class data — this is object slicing applied to exceptions. Bare `throw;` with no operand rethrows the *original* exception object exactly as it was thrown, preserving its dynamic type and all derived fields. Rule: when you want to pass the same exception up the stack, always write `throw;` by itself."
+    },
+    {
+      "lesson": "277--function-try-blocks",
+      "title": "Constructor function try blocks cannot return normally",
+      "md": "A constructor that fails to construct has no object to return, so the runtime forbids the function-level catch block from 'recovering' and allowing the constructor to succeed. If control reaches the end of the catch block without throwing, the current exception is implicitly rethrown. In practice this means a constructor function try block is for *logging or translating* the exception, not for suppressing it and pretending construction succeeded."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "278--exception-dangers-and-downsides",
+      "to": 22,
+      "md": "Chapter 22 introduced `std::unique_ptr` and move semantics — exactly the RAII tools this lesson recommends over raw `new`/`delete` to guarantee cleanup when an exception bypasses a manual `delete`."
+    },
+    {
+      "lesson": "2710--stdmove_if_noexcept",
+      "to": 22,
+      "md": "Chapter 22 covered move constructors and `std::move`; `std::move_if_noexcept` builds directly on that — it chooses move-or-copy at the call site based on whether the move constructor is `noexcept`."
+    },
+    {
+      "lesson": "275--exceptions-classes-and-inheritance",
+      "to": 25,
+      "md": "Chapter 25 introduced `dynamic_cast` for safely casting within a class hierarchy; `std::bad_cast` (thrown on a failed reference `dynamic_cast`) is part of the standard exception hierarchy covered here."
+    }
+  ]
+}

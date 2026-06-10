@@ -1,0 +1,44 @@
+{
+  "chapter": 14,
+  "lead": "Classes are C++'s primary tool for bundling data with the behavior that operates on it, protecting that data behind a controlled public interface. After this chapter you will be able to define a class with private members and a constructor, write `const` member functions that work on read-only objects and references, and reason about how constructors establish valid state before the rest of the program can touch an object.",
+  "tag": "classes",
+  "aids": [
+    {
+      "lesson": "144--const-class-objects-and-const-member-functions",
+      "title": "Why const lives after the parentheses",
+      "md": "The `const` in `int value() const` goes *after* the parameter list because it qualifies the implicit object — it is a promise that the function will not modify `*this`. Without it, the compiler must assume the function modifies the object and will refuse to call it on a `const` object or a `const` reference, even if the function body is a one-liner that only reads. A good rule of thumb: every member function that does not visibly assign to any data member should be marked `const`."
+    },
+    {
+      "lesson": "1410--constructor-member-initializer-lists",
+      "title": "Init-list order follows declaration order, not list order",
+      "md": "Members are initialized in the order they are *declared in the class body*, not the order they appear in the member initializer list. If `m_a` is declared before `m_b`, it initializes first regardless of which name comes first after the `:`. This matters when one member's initializer references another — listing `m_b` first in the list does not make it initialize first. Keep the list order identical to the declaration order to avoid silent surprises."
+    },
+    {
+      "lesson": "1412--delegating-constructors",
+      "title": "Calling a constructor in the body creates a temporary",
+      "md": "Writing `Foo(1);` inside a constructor body does *not* re-initialize the current object — it constructs an anonymous temporary `Foo` and immediately discards it. To forward initialization work to another constructor, put the call in the member initializer list: `: Foo { 1 }`. This is the delegating constructor syntax; it runs the target constructor on `*this` before the body executes."
+    },
+    {
+      "lesson": "1416--converting-constructors-and-the-explicit-keyword",
+      "title": "explicit blocks implicit single-argument construction",
+      "md": "A single-argument constructor without `explicit` acts as an implicit conversion: `void process(Token t)` can be called as `process(5)` and the compiler silently constructs `Token{5}`. Adding `explicit` prevents that silent path — the caller must write `process(Token{5})` to make the intent visible. Best practice: mark single-argument constructors `explicit` by default and remove it only when you specifically want the implicit conversion."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "141--introduction-to-object-oriented-programming",
+      "to": 13,
+      "md": "Chapter 13 introduced structs as passive data aggregates; Chapter 14 builds on that foundation by adding private access, member functions, and constructors to create objects with enforced invariants."
+    },
+    {
+      "lesson": "144--const-class-objects-and-const-member-functions",
+      "to": 12,
+      "md": "Passing class objects by `const T&` — the pattern that makes `const` member functions mandatory — applies the reference conventions from Chapter 12."
+    },
+    {
+      "lesson": "1413--temporary-class-objects",
+      "to": 5,
+      "md": "The lifetime warning about returning references or views from temporary objects directly parallels the `std::string_view` dangling-reference pitfall covered in Chapter 5."
+    }
+  ]
+}

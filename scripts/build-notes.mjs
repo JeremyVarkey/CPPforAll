@@ -9,11 +9,35 @@
  */
 import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { renderToTree, toHtml, toString } from './lib/markdown.mjs';
+import { renderToTree, renderMarkdown, toHtml, toString } from './lib/markdown.mjs';
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const NOTES = path.join(ROOT, 'content/notes');
+const OVERLAYS = path.join(ROOT, 'src/content-overlays');
 const OUT = path.join(ROOT, 'src/generated/notes');
+
+/** Load a chapter's enrichment overlay (agent-authored, committed) if present. */
+async function loadOverlay(num) {
+  const p = path.join(OVERLAYS, `chapter-${String(num).padStart(2, '0')}.json`);
+  try {
+    return JSON.parse(await readFile(p, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+const AID_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5.9 1.1.9 1.8V16h5.2v-.3c0-.7.3-1.3.9-1.8A6 6 0 0 0 12 3Z"/></svg>';
+const XREF_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.5 1.5"/><path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5L12.5 16.5"/></svg>';
+
+async function aidHtml(aid) {
+  const body = await renderMarkdown(aid.md);
+  return `<div class="callout aid"><span class="ico">${AID_ICON}</span><div class="body"><div class="ctitle">${aid.title ?? 'Study aid'}</div>${body}</div></div>`;
+}
+async function xrefHtml(xref) {
+  const body = await renderMarkdown(xref.md);
+  const slug = String(xref.to).padStart(2, '0');
+  return `<a class="callout xref" href="/chapters/${slug}/"><span class="ico">${XREF_ICON}</span><div class="body"><div class="ctitle">Builds on</div>${body}</div></a>`;
+}
 
 function stripFrontMatter(tree, num) {
   // drop: the h1; the "> Source:" blockquote (capture its text); the
@@ -82,18 +106,34 @@ export async function buildNotes() {
     const tree = await renderToTree(md);
     const { children, source } = stripFrontMatter(tree, num);
     const { intro, lessons } = splitLessons(children);
+    const overlay = await loadOverlay(num);
+
+    const renderedLessons = [];
+    for (const l of lessons) {
+      let html = toHtml({ type: 'root', children: l.nodes }, { allowDangerousHtml: true });
+      for (const aid of overlay?.aids ?? []) {
+        if (aid.lesson === l.anchor) html += await aidHtml(aid);
+      }
+      for (const x of overlay?.xrefs ?? []) {
+        if (x.lesson === l.anchor) html += await xrefHtml(x);
+      }
+      renderedLessons.push({ anchor: l.anchor, title: l.title, html });
+    }
+
+    let leadHtml = null;
+    if (overlay?.lead) {
+      leadHtml = (await renderMarkdown(overlay.lead))
+        .replace(/^<p>/, '<p class="lead">');
+    }
 
     const json = {
       num,
       title,
       source,
       readingMinutes,
+      leadHtml,
       introHtml: toHtml({ type: 'root', children: intro }, { allowDangerousHtml: true }),
-      lessons: lessons.map((l) => ({
-        anchor: l.anchor,
-        title: l.title,
-        html: toHtml({ type: 'root', children: l.nodes }, { allowDangerousHtml: true }),
-      })),
+      lessons: renderedLessons,
     };
     if (json.lessons.length === 0) {
       throw new Error(`notes chapter-${num}: no lessons parsed`);

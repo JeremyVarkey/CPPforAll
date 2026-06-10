@@ -1,0 +1,28 @@
+{
+  "chapter": 8,
+  "lead": "Programs that only run top-to-bottom are the exception, not the rule. Control flow — `if`, `switch`, loops, `break`, and the rest — is how you make a program that branches on conditions, repeats work until a goal is met, and stops cleanly when something goes wrong. After this chapter you will be able to write every major control-flow construct in C++, understand the pitfalls that trip up even experienced programmers, and use `<random>` to introduce controlled randomness into your programs.",
+  "tag": "control flow",
+  "aids": [
+    {
+      "lesson": "83--common-if-statement-problems",
+      "title": "Dangling else: grammar overrides indentation",
+      "md": "In `if (a) if (b) doThing(); else doOther();` the `else` binds to the *nearest* unmatched `if` — that is `if (b)`, not `if (a)` — even though the indentation suggests otherwise. The compiler reads grammar, not whitespace. Use braces around every `if` body to make the attachment explicit and match what you actually intend."
+    },
+    {
+      "lesson": "86--switch-fallthrough-and-scoping",
+      "title": "case labels do not create a new scope",
+      "md": "The entire body of a `switch` is one scope — `case` labels are just signposts inside it, not block boundaries. If you declare `int value` in one `case`, it is technically in scope for every `case` below, which can cause initialization and redeclaration surprises. The fix is a pair of braces around each `case` body that needs its own local variable."
+    },
+    {
+      "lesson": "810--for-statements",
+      "title": "Half-open ranges and off-by-one errors",
+      "md": "C++ loops almost universally use a *half-open* range: start at `0`, stop when `i < count` (not `i <= count - 1`). The loop `for (int i { 0 }; i <= 10; ++i)` runs **eleven** times (0 through 10), not ten. Picture `[0, 10)` — the left bracket is closed (0 is included) and the right parenthesis is open (10 is excluded) — and you will almost never miscalculate an iteration count again."
+    },
+    {
+      "lesson": "814--generating-random-numbers-using-mersenne-twister",
+      "title": "Seed once, reuse the engine",
+      "md": "Creating a new `std::mt19937` inside a loop resets the generator's state on every iteration, so you get the *same* first value every time the loop runs. Create and seed the engine exactly once, outside the loop, and the state advances naturally across calls — giving you a genuinely varied sequence."
+    }
+  ],
+  "xrefs": []
+}

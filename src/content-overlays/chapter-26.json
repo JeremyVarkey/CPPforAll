@@ -1,0 +1,39 @@
+{
+  "chapter": 26,
+  "lead": "Every STL container you have used — `std::vector<T>`, `std::array<T, N>`, `std::unordered_map<K, V>` — is a class template: a single stencil the compiler stamps into concrete code on demand. Chapter 26 shows how to write your own, how to specialize one for particular types or type families, and how to read the template-heavy declarations that appear throughout LLVM and the standard library without treating the angle brackets as noise.",
+  "tag": "class templates",
+  "aids": [
+    {
+      "lesson": "261--template-classes",
+      "title": "Why templates can't split into .h / .cpp",
+      "md": "Think of the compiler as a printing press: to stamp out a concrete `Box<int>`, it must have the full template mold in front of it at that moment. If the member bodies live in `Box.cpp`, that translation unit instantiates nothing useful — no one asked for `Box<int>` there — and the linker later finds no `Box<int>::get()` symbol to link against. The rule follows directly: keep the full template definition (class body *and* member bodies) visible in the header that users include."
+    },
+    {
+      "lesson": "263--function-template-specialization",
+      "title": "Full specializations obey the ODR like regular functions",
+      "md": "A `template <>` specialization is no longer a template — the compiler treats it as an ordinary function. Put its definition in a header included by multiple `.cpp` files and you get a duplicate-definition linker error, just as you would with any non-`inline` function. The fix is to mark it `inline` in the header, or move the definition into exactly one `.cpp` file."
+    },
+    {
+      "lesson": "265--partial-template-specialization",
+      "title": "Only classes can be partially specialized, not free functions",
+      "md": "The rule that trips learners: you can partially specialize a *class* template (`template <std::size_t N> class StaticList<char, N>`), but you cannot partially specialize a *function* template. For functions, the equivalent is a plain overload whose parameter type mentions the partially specialized class pattern — overload resolution picks the right one without needing partial specialization syntax."
+    },
+    {
+      "lesson": "266--partial-template-specialization-for-pointers",
+      "title": "Inside Storage<T*>, T is the pointee — not the pointer",
+      "md": "When the compiler matches `Storage<int*>` against `template <typename T> class Storage<T*>`, it deduces `T = int`, not `T = int*`. That is why the member inside the specialization is declared `T* m_value` (storing a pointer to `T`) rather than `T m_value` (which would store the pointee object by value). A quick sanity check: inside `Storage<int*>`, writing `T` gives you `int`, and writing `T*` gives you `int*`."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "261--template-classes",
+      "to": 11,
+      "md": "Chapter 11 introduced function templates and the `template <typename T>` syntax; class templates extend the same idea from standalone functions to entire class definitions."
+    },
+    {
+      "lesson": "262--template-non-type-parameters",
+      "to": 17,
+      "md": "Chapter 17's `std::array<T, N>` is the canonical example of a non-type template parameter — the fixed size `N` is baked into the type at compile time, enabling stack allocation without dynamic memory."
+    }
+  ]
+}

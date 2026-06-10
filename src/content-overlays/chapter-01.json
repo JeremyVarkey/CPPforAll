@@ -1,0 +1,28 @@
+{
+  "chapter": 1,
+  "lead": "Every C++ program is built from the same small vocabulary: *statements* that do work, *variables* that name pieces of memory, and *operators* that combine values into expressions. This chapter walks you through that foundation — from your first `main()` function and `std::cout` call all the way to reading user input and writing your first complete program.",
+  "tag": "basics",
+  "aids": [
+    {
+      "lesson": "14--variable-assignment-and-initialization",
+      "title": "Why {} beats = for initialization",
+      "md": "Prefer `int x { 5 };` over `int x = 5;` for one concrete reason: braces forbid *narrowing conversions*. Writing `int x { 4.5 };` is a compile error — the `.5` would be silently lost — whereas `int x = 4.5;` compiles quietly and gives you `4`. The braces form is your first line of defence against a whole class of subtle data-loss bugs."
+    },
+    {
+      "lesson": "16--uninitialized-variables-and-undefined-behavior",
+      "title": "UB is not random noise — it is invisible",
+      "md": "The danger of undefined behavior is not that it always crashes; it is that it *sometimes appears to work*. An uninitialized variable might hold zero in your debug build (because the compiler or OS zeroed that memory page) and hold garbage in a release build that optimises differently. This is why the rule 'always initialize your variables' is non-negotiable in C++, not merely stylistic."
+    },
+    {
+      "lesson": "15--introduction-to-iostream-cout-cin-and-endl",
+      "title": "Backslash \\n, not forward slash /n",
+      "md": "A very common typo is writing `'/n'` (forward slash) instead of `'\\n'` (backslash). The forward-slash version is a valid but meaningless character literal — it will not produce a newline and will instead print a garbage number. When in doubt, remember: `\\n` is the *escape sequence* for linefeed, and escape sequences always start with a **back**slash."
+    },
+    {
+      "lesson": "110--introduction-to-expressions",
+      "title": "Expressions vs statements: one key difference",
+      "md": "An *expression* computes a value but cannot stand alone in code (`2 + 3` by itself does not compile as a line). A *statement* is a complete instruction that *can* stand alone — you turn any expression into a statement by appending `;`. The `int x { 2 + 3 };` line contains both: `2 + 3` is the expression, and the whole declaration is the statement."
+    }
+  ],
+  "xrefs": []
+}

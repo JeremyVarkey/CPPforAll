@@ -1,0 +1,34 @@
+{
+  "chapter": 6,
+  "lead": "Operators are the grammar of computation: they decide how values combine, in what order, and with what side effects. This chapter gives you the full operator toolkit — arithmetic, remainder, relational, logical, and the conditional `?:` — along with the rules (precedence, associativity, short-circuit evaluation) that determine exactly what a compound expression means. After reading this chapter you will be able to write correct, readable predicates, catch the integer-division and floating-point-equality traps before they bite you, and use `&&` and `||` as deliberate guards rather than accidental hazards.",
+  "tag": "operators",
+  "aids": [
+    {
+      "lesson": "61--operator-precedence-and-associativity",
+      "title": "Grouping ≠ evaluation order",
+      "md": "Precedence and associativity answer only one question: which operands belong to which operator? They say nothing about which sub-expression the CPU evaluates *first*. In `add(x, ++x)`, the grouping is perfectly unambiguous — but whether the compiler reads `x` before or after it increments `x` is undefined. When the order of evaluation matters, pull each side effect into its own statement before the call."
+    },
+    {
+      "lesson": "62--arithmetic-operators",
+      "title": "Integer division silently discards the fraction",
+      "md": "When both operands of `/` are integers, the fractional part is discarded *before* the result is stored, even if you assign it to a `double`. Writing `double ratio { failedTests / totalTests }` does not give you a decimal ratio — it gives you `0.0` because the integer division already happened. Cast *before* dividing: `static_cast<double>(failedTests) / totalTests`."
+    },
+    {
+      "lesson": "63--remainder-and-exponentiation",
+      "title": "Remainder sign follows the left operand — use != 0 for oddness",
+      "md": "C++'s `%` operator gives a result whose sign matches the *left* operand, not conventional mathematical modulo. That means `-7 % 2` is `-1`, not `1`. An odd-number check written as `(x % 2) == 1` silently returns `false` for negative odd numbers; write `(x % 2) != 0` instead. Also note: `^` is *not* exponentiation in C++ — it is bitwise XOR."
+    },
+    {
+      "lesson": "67--relational-operators-and-floating-point-comparisons",
+      "title": "Never use == on calculated floating-point values",
+      "md": "Floating-point arithmetic accumulates tiny rounding errors, so two expressions that are mathematically equal often produce slightly different `double` values. Testing `0.1 + 0.2 == 0.3` typically returns `false`. Compare the absolute difference against a small tolerance (`std::abs(a - b) <= epsilon`) rather than using `==` or `!=` on any value that went through arithmetic."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "62--arithmetic-operators",
+      "to": 4,
+      "md": "The `static_cast<double>(...)` used to force floating-point division was introduced in Chapter 4 alongside the fundamental numeric types and conversion rules."
+    }
+  ]
+}

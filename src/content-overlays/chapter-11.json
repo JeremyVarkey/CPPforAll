@@ -1,0 +1,39 @@
+{
+  "chapter": 11,
+  "lead": "Function overloading lets you give related operations a single name and let the compiler choose the right one by matching argument types — so callers think about *what* they want, not *which type-specific variant* to call. Function templates take that idea further: write an algorithm once, and the compiler generates a correctly typed version for every concrete type you use. After this chapter you will be able to design clean overload sets, understand exactly how the compiler resolves a call, and write function templates with type and non-type parameters.",
+  "tag": "function templates",
+  "aids": [
+    {
+      "lesson": "113--function-overload-resolution-and-ambiguous-matches",
+      "title": "Resolution ranking in plain English",
+      "md": "Think of the compiler as working through a priority list: it tries an *exact match* first, then a *numeric promotion* (e.g. `char` → `int`), then a *numeric conversion* (e.g. `int` → `double`). It stops at the first step where exactly one candidate wins. If two candidates tie at the same step — like `draw(long)` vs `draw(double)` when you pass an `int` — neither beats the other and you get an ambiguous-call error. Use a suffix (`10L`) or `static_cast` at the call site to break the tie."
+    },
+    {
+      "lesson": "117--function-template-instantiation",
+      "title": "Deduction does not convert — you must help it",
+      "md": "Template argument deduction is not the same as overload resolution: the compiler must deduce a *single* consistent type for `T` from all arguments that use it. `larger(1, 2.5)` fails because `1` suggests `T = int` while `2.5` suggests `T = double` — no single answer satisfies both. Fix it with an explicit type argument (`larger<double>(1, 2.5)`) or a cast (`larger(static_cast<double>(1), 2.5)`)."
+    },
+    {
+      "lesson": "118--function-templates-with-multiple-template-types",
+      "title": "auto return type: let the expression decide",
+      "md": "When a template has two type parameters — say `T` and `U` — the result of `a + b` may be neither `T` nor `U` alone. Writing `T` as the return type silently narrows the result back to `T`, which can drop a fractional part. Declaring the return type `auto` tells the compiler to deduce the return type from the actual expression, so `int + double` correctly returns `double`."
+    },
+    {
+      "lesson": "1110--using-function-templates-in-multiple-files",
+      "title": "Why template bodies live in headers",
+      "md": "For a regular function, the compiler only needs a declaration to compile a call — the linker finds the definition later. For a template, the compiler must see the *full body* at the point of the call because it has to generate a concrete function for the specific type being used. If the body is hidden in a `.cpp` file, a different translation unit that uses the template cannot instantiate it and the linker finds nothing to link."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "112--function-overload-differentiation",
+      "to": 10,
+      "md": "The rule that type aliases do not create distinct overloadable types builds directly on Chapter 10's explanation of `using` aliases and how they remain the same underlying type."
+    },
+    {
+      "lesson": "113--function-overload-resolution-and-ambiguous-matches",
+      "to": 10,
+      "md": "The distinction between numeric *promotions* and numeric *conversions* — which determines resolution priority — was introduced in Chapter 10's coverage of implicit type conversions."
+    }
+  ]
+}

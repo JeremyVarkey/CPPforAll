@@ -21,6 +21,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "hast-util-to-html": "^9.0.5",

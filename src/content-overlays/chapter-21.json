@@ -1,0 +1,44 @@
+{
+  "chapter": 21,
+  "lead": "Operator overloading lets you define what existing operators mean for your own types, so a `Fraction` can be added with `+`, compared with `==`, and printed with `<<` just like a built-in number. This chapter covers when and how to overload operators — as member functions, friend functions, or normal non-members — and closes with the copying pitfalls that arise when a class owns raw resources.",
+  "tag": "operator overloading",
+  "aids": [
+    {
+      "lesson": "214--overloading-the-io-operators",
+      "title": "Why operator<< can never be a member of your class",
+      "md": "`std::cout << point` desugars to `operator<<(std::cout, point)`. The left operand is `std::ostream`, not your class, so a member function on `Point` would have the wrong receiver — it would need to be called as `point << std::cout`, which is backwards. That is why `operator<<` and `operator>>` are always non-members (and usually `friend` so they can reach private data), and why they return `std::ostream&` or `std::istream&` rather than a new value."
+    },
+    {
+      "lesson": "218--overloading-the-increment-and-decrement-operators",
+      "title": "The dummy int distinguishes postfix from prefix",
+      "md": "C++ has no keyword for \"postfix\" — the language distinguishes `++x` from `x++` by a dummy `int` parameter in the postfix signature: `Counter operator++(int)`. You never pass that argument; it is purely a syntax marker. The postfix body must save a copy before modifying the object because it has to return the *old* value, which is also why postfix is typically slower than prefix for non-trivial types."
+    },
+    {
+      "lesson": "2112--overloading-the-assignment-operator",
+      "title": "Self-assignment destroys data in resource-owning classes",
+      "md": "In a class that owns a raw array, the naive assignment `delete[] m_data; m_data = new int[other.m_length]{}; /* copy */` is catastrophic when `this == &other`: deleting `m_data` also deletes `other.m_data` (they are the same pointer), so the copy loop then reads freed memory. The guard `if (this == &other) return *this;` is one fix; the copy-and-swap idiom shown in the notes is safer still because it avoids modifying the original object until a successful copy exists."
+    },
+    {
+      "lesson": "2113--shallow-vs-deep-copying",
+      "title": "Rule of three: if you need one, you need all three",
+      "md": "If your class needs a custom destructor to release a resource, the compiler-generated copy constructor and copy assignment will both do a shallow copy — copying the raw pointer value and creating accidental shared ownership with double-delete on destruction. The rule of three says: a custom destructor implies you should also write a custom copy constructor *and* a custom copy assignment. The modern alternative is the rule of zero: wrap the resource in `std::vector` or a smart pointer so the generated special members are automatically correct."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "2112--overloading-the-assignment-operator",
+      "to": 14,
+      "md": "The copy constructor vs copy assignment distinction — and the fact that `operator=` must be a member — builds directly on the class special-member rules introduced in Chapter 14."
+    },
+    {
+      "lesson": "2113--shallow-vs-deep-copying",
+      "to": 19,
+      "md": "The shallow vs deep copy problem arises from raw owning pointers allocated with `new[]` and released with `delete[]`, the dynamic allocation mechanics covered in Chapter 19."
+    },
+    {
+      "lesson": "2114--overloading-operators-and-function-templates",
+      "to": 11,
+      "md": "Function templates that use `operator<` or `operator<<` rely on the template instantiation model introduced in Chapter 11, where the compiler resolves operator calls for the concrete type at instantiation time."
+    }
+  ]
+}

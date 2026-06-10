@@ -1,0 +1,44 @@
+{
+  "chapter": 25,
+  "lead": "When a base pointer or reference points at a derived object, which version of a function runs? Without `virtual`, the answer is always the base version — a limit that made Chapter 24's `Report-Logger` family frustrating. Chapter 25 closes that gap: you will understand how `virtual` enables runtime dispatch, how `override` and `final` keep hierarchies honest, why abstract base classes and interface classes express *requirements* rather than implementations, and how to avoid the two silent traps — object slicing and unsafe downcasting — that trip up almost every learner working with polymorphic C++ for the first time.",
+  "tag": "virtual functions",
+  "aids": [
+    {
+      "lesson": "252--virtual-functions-and-polymorphism",
+      "title": "Static type vs dynamic type in one sentence",
+      "md": "The *static type* is what the compiler sees from the expression — `Base&` — and it never changes. The *dynamic type* is what actually lives in memory at runtime — possibly a `Derived`. Non-virtual calls use the static type (compile-time decision); virtual calls through a pointer or reference consult the dynamic type (runtime decision via the vtable). Keeping these two ideas separate is the key to predicting dispatch."
+    },
+    {
+      "lesson": "254--virtual-destructors-virtual-assignment-and-overriding-virtualization",
+      "title": "Virtual destructor rule of thumb",
+      "md": "If a class has any `virtual` function *and* objects of that class can be deleted through a base pointer (the normal polymorphic pattern), declare the destructor `virtual`. Without it, `delete base_ptr` calls only `Base::~Base()` and silently skips the derived destructor — a guaranteed resource leak. The cheapest fix is `virtual ~Base() = default;` in the base class declaration."
+    },
+    {
+      "lesson": "259--object-slicing",
+      "title": "Slicing: the derived part simply vanishes",
+      "md": "Object slicing happens whenever a derived object is assigned or passed *by value* to a base-typed variable: `Base b = derived;` copies only the `Base` subobject, and the derived data and virtual table pointer are gone for good. The fix is to pass by reference (`const Base&`) or keep polymorphic objects behind pointers — `std::vector<std::unique_ptr<Base>>` instead of `std::vector<Base>`."
+    },
+    {
+      "lesson": "2510--dynamic-casting",
+      "title": "Prefer the pointer form of dynamic_cast",
+      "md": "Use `dynamic_cast<Derived*>(ptr)` and test the result against `nullptr` — that is the safe, no-exception path. The reference form `dynamic_cast<Derived&>(ref)` throws `std::bad_cast` on failure, which forces a `try`/`catch` around every call site. LLVM's own `dyn_cast<T>(ptr)` follows the same pointer-form convention for the same reason."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "251--pointers-and-references-to-the-base-class-of-derived-objects",
+      "to": 24,
+      "md": "The base-pointer / base-reference binding introduced here is the direct continuation of Chapter 24's inheritance model, where static binding left the `Report-Logger` hierarchy unable to dispatch to derived overrides."
+    },
+    {
+      "lesson": "252--virtual-functions-and-polymorphism",
+      "to": 24,
+      "md": "Chapter 24 demonstrated the exact non-virtual dispatch limitation — calling through `Base&` always hit the base version — that `virtual` resolves in this lesson."
+    },
+    {
+      "lesson": "259--object-slicing",
+      "to": 22,
+      "md": "The `std::vector<std::unique_ptr<Base>>` pattern used to avoid slicing relies on `std::unique_ptr` and `std::make_unique` introduced in Chapter 22."
+    }
+  ]
+}

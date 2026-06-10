@@ -46,11 +46,19 @@ export async function buildChaptersIndex() {
     // "Chapter 12 — Compound Types: References and Pointers" → keep the part after the dash
     const title = h1.replace(/^Chapter\s+\d+\s*[—–-]\s*/i, '').trim();
     const meta = drillMeta.get(num);
+    // overlay may refine the rail tag (agent-confirmed, ≤22 chars)
+    let tag = TAGS[num] ?? '';
+    try {
+      const overlay = JSON.parse(
+        await readFile(path.join(ROOT, 'src/content-overlays', `chapter-${String(num).padStart(2, '0')}.json`), 'utf8'),
+      );
+      if (typeof overlay.tag === 'string' && overlay.tag.length <= 22) tag = overlay.tag;
+    } catch {}
     chapters.push({
       num,
       slug: String(num).padStart(2, '0'),
       title,
-      tag: TAGS[num] ?? '',
+      tag,
       hasDrill: Boolean(meta),
       project: meta?.project ?? null,
       concept: meta?.concept ?? null,

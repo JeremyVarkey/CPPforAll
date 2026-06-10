@@ -1,0 +1,39 @@
+{
+  "chapter": 9,
+  "lead": "Compiling is not the same as correct. This chapter shows you how to test code systematically, recognize the semantic errors C++ lets slip through the compiler, build programs that recover from bad input rather than crashing, and use `assert` and `static_assert` to make hidden assumptions explicit. After this chapter you will be able to write unit tests, reason about branch and loop coverage, handle every common `std::cin` failure mode, and distinguish programmer bugs from expected error cases.",
+  "tag": "error handling",
+  "aids": [
+    {
+      "lesson": "93--common-semantic-errors-in-c",
+      "title": "Unsigned counters and infinite loops",
+      "md": "An unsigned counter that decrements through zero wraps to a very large positive number rather than going negative, so a condition like `i >= 0` is *always* true for `unsigned int i`. The loop never exits. Prefer signed loop counters (`int`) unless you have a specific reason to model a non-negative quantity — the notes explicitly call this out as a common pitfall."
+    },
+    {
+      "lesson": "95--stdcin-and-handling-invalid-input",
+      "title": "Order matters: snapshot, then clear, then ignore",
+      "md": "After `std::cin >> value` fails, you must read the success flag *before* calling `std::cin.clear()` — `clear()` resets the failure state and destroys the evidence. The correct order is: capture `static_cast<bool>(std::cin)` into a variable, then `clear()`, then `ignore()` the rest of the line. If you call `clear()` first and *then* check whether extraction succeeded, you will always see `true` and silently accept garbage."
+    },
+    {
+      "lesson": "96--assert-and-static_assert",
+      "title": "assert is for bugs; runtime checks are for users",
+      "md": "Use `assert` when a condition being false means *your code* has a bug — a precondition a caller violated, an internal state that should be impossible. Use runtime validation (an `if` + error message/retry) when the condition can fail during *normal operation* — user input, missing files, out-of-range values a real user might enter. Asserting on user-supplied data crashes a correct program on ordinary input; runtime checks handle it gracefully."
+    },
+    {
+      "lesson": "96--assert-and-static_assert",
+      "title": "Side effects inside assert disappear in release",
+      "md": "When `NDEBUG` is defined, the preprocessor replaces `assert(expr)` with nothing — the expression is never evaluated. Any side effect inside the assertion, such as `assert(++index < size)`, silently vanishes in a release build, leaving your program with different behavior in debug and release modes. Keep the side-effecting operation on its own line before the assertion."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "93--common-semantic-errors-in-c",
+      "to": 4,
+      "md": "Integer division, unsigned wrap-around, and floating-point equality pitfalls catalogued here build directly on Chapter 4's treatment of fundamental numeric types and overflow."
+    },
+    {
+      "lesson": "95--stdcin-and-handling-invalid-input",
+      "to": 1,
+      "md": "The `std::cin >> value` extraction model used throughout this lesson is first introduced in Chapter 1 alongside `std::cout`."
+    }
+  ]
+}

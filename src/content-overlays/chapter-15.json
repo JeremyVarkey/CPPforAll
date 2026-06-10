@@ -1,0 +1,34 @@
+{
+  "chapter": 15,
+  "lead": "Chapter 15 completes the core class toolkit: you will understand how the hidden `this` pointer ties every member function call to its object, how to split a class across `.h` and `.cpp` files the way every production codebase does, how destructors make resource cleanup deterministic, and how static members and friend declarations extend a class beyond the per-object model. By the end you can read and write the class patterns that appear throughout the LLVM and C++ standard library headers.",
+  "tag": "classes II",
+  "aids": [
+    {
+      "lesson": "151--the-hidden-this-pointer-and-member-function-chaining",
+      "title": "Why return type must be a reference for chaining",
+      "md": "For chaining to work, the return type must be `Counter&` — a reference to the *same* object — not `Counter` by value. If you return by value, each call gets a fresh copy and the chain operates on temporaries that are immediately discarded; the original object never sees the second or third call. Think of it as handing back the *same baton* each time rather than throwing a copy."
+    },
+    {
+      "lesson": "155--class-templates-with-member-functions",
+      "title": "Why template<typename T> must repeat for out-of-class definitions",
+      "md": "When you define a member function outside the class body, the compiler needs to know it is part of a template, not a definition for a specific concrete type. The `template <typename T>` prefix before each out-of-class definition re-establishes that context. Omitting it causes a compile error because `Box<T>` in the scope qualifier is otherwise undefined."
+    },
+    {
+      "lesson": "154--introduction-to-destructors",
+      "title": "RAII: cleanup tied to scope, not programmer discipline",
+      "md": "The destructor runs automatically when an object's lifetime ends — there is no way to forget to call it. This is the foundation of RAII: if a constructor acquires a resource (a file handle, a lock, a network connection) and the destructor releases it, the resource is guaranteed to be freed when the enclosing scope exits, even if a function returns early or an exception is thrown. The implicit destructor generated for classes whose members all clean themselves up (like `std::vector`, `std::string`) is already doing this for you in most code you write."
+    },
+    {
+      "lesson": "1510--ref-qualifiers",
+      "title": "The dangling-reference danger ref qualifiers prevent",
+      "md": "Without ref qualifiers, a `const std::string&` accessor can be called on a temporary: `const std::string& s = Buffer{}.data();` — the temporary is destroyed at the semicolon and `s` is a dangling reference. The `&` ref qualifier on the lvalue overload makes the compiler reject that call, forcing the `&&` overload (which moves data out instead of returning a reference) when the object is a temporary."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "1510--ref-qualifiers",
+      "to": 14,
+      "md": "Chapter 14 introduced `const` member functions and the dangers of returning references to object internals; ref qualifiers extend that same protection to temporary (rvalue) objects."
+    }
+  ]
+}

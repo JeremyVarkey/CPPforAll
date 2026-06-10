@@ -1,0 +1,44 @@
+{
+  "chapter": 7,
+  "lead": "Where a name is visible, how long its object lives, and whether two files can share it are three separate questions — and C++ gives each its own answer. This chapter builds the vocabulary to reason about *scope*, *duration*, and *linkage* precisely, so you can design multi-file programs where state is intentional rather than accidental.",
+  "tag": "scope & linkage",
+  "aids": [
+    {
+      "lesson": "76--internal-linkage",
+      "title": "Linkage is about identity across files",
+      "md": "Think of linkage as answering one question: *is the `count` in `a.cpp` the same object as the `count` in `b.cpp`?* **No linkage** (locals): each declaration is its own separate thing. **Internal linkage** (`static` global or `const` global): the name exists only in one translation unit — `b.cpp` cannot even see it. **External linkage** (ordinary function or non-`const` global): the linker will wire them together so both files share one object. Scope tells the compiler what you can name in source; linkage tells the *linker* what connects across files."
+    },
+    {
+      "lesson": "79--inline-functions-and-variables",
+      "title": "Modern `inline` is about ODR, not speed",
+      "md": "The `inline` keyword no longer means \"please expand this call inline for performance\" — compilers make that decision themselves. In modern C++ it means: *this definition may appear in multiple translation units, and the linker should treat them all as the same entity, provided every copy is identical.* That is exactly why you can put an `inline` function (or `inline constexpr` variable) in a header: every `.cpp` that includes the header gets its own copy of the definition, but the linker deduplicates them without an ODR violation."
+    },
+    {
+      "lesson": "711--static-local-variables",
+      "title": "Static locals: block scope but outlive the call",
+      "md": "A `static` local variable has two properties that seem to contradict each other. Its *scope* is block scope — code outside the function cannot name it at all. But its *duration* is static — the object is created once (on the first call) and lives until the program ends, never destroyed when the function returns. This means it **remembers its value across calls**, unlike an ordinary local that is freshly constructed and destroyed every time. The `s_` prefix is a common signal that a local has this persistent character."
+    },
+    {
+      "lesson": "77--external-linkage-and-variable-forward-declarations",
+      "title": "`extern` has two distinct meanings",
+      "md": "The `extern` keyword is context-sensitive in a way beginners often find confusing. On a declaration *without* an initializer (`extern int g_x;`) it means \"this object is defined somewhere else — connect it at link time.\" On a `const` definition *with* an initializer (`extern const int g_limit { 10 };`) it overrides `const`'s default internal linkage and makes that definition externally visible. For non-`const` globals you almost never write `extern` on the definition itself — just define the variable normally in one `.cpp` and use `extern` declarations everywhere else."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "72--user-defined-namespaces-and-the-scope-resolution-operator",
+      "to": 2,
+      "md": "Namespaces were first introduced in Chapter 2 alongside function declarations; this lesson extends that foundation to show how they interact with linkage and forward declarations in multi-file projects."
+    },
+    {
+      "lesson": "73--local-variables",
+      "to": 2,
+      "md": "The distinction between a declaration and a definition — first established in Chapter 2 with function forward declarations — reappears here as the precise rule for why local variables have no linkage."
+    },
+    {
+      "lesson": "710--sharing-global-constants-across-multiple-files-using-inline-variables",
+      "to": 5,
+      "md": "The `constexpr` keyword and compile-time constant values from Chapter 5 are the prerequisite for understanding why `inline constexpr` in a header is the preferred C++17 pattern for shared constants."
+    }
+  ]
+}

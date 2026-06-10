@@ -1,0 +1,28 @@
+{
+  "chapter": 3,
+  "lead": "Bugs come in four distinct varieties — syntax, compile-time semantic, runtime, and logical — and knowing which kind you have determines every tool you reach for next. This chapter builds the practical mindset that lets you reproduce a failure reliably, compare *expected* state to *actual* state, and trace the execution path backward from symptom to root cause. By the end you will be able to use print statements, assertions, stepping, breakpoints, watches, and the call stack to locate the first moment your program diverges from your intent.",
+  "tag": "debugging",
+  "aids": [
+    {
+      "lesson": "31--syntax-and-semantic-errors",
+      "title": "Four error kinds at a glance",
+      "md": "Think of these as four checkpoints: the *compiler's parser* stops syntax errors; the *compiler's type checker* stops compile-time semantic errors; *execution* is where runtime errors surface; and *correctness reasoning* is the only thing that catches logical errors. A clean compile only clears the first two checkpoints — it says nothing about the other two."
+    },
+    {
+      "lesson": "35--more-debugging-tactics",
+      "title": "assert is for programmer errors, not user input",
+      "md": "`assert(index < seed.size())` documents an *internal invariant* — a contract your code promises to maintain. If that assertion fires, the bug is in your code (a caller passed a bad index), not in the user's input. Never use `assert` to validate data coming from outside the program; use an explicit `if` check and a meaningful error message instead."
+    },
+    {
+      "lesson": "38--using-an-integrated-debugger-watching-variables",
+      "title": "The debug arrow points at the next line, not the last",
+      "md": "When the debugger pauses on a line, that line *has not yet executed*. So if you are stopped on `int result { a + b };` and you look at `result` in the locals pane, it will show whatever garbage was in that memory slot — or the previous run's value. Step *over* the line first, then inspect. This off-by-one mental model prevents hours of confused \"why does `result` look wrong?\" sessions."
+    },
+    {
+      "lesson": "39--using-an-integrated-debugger-the-call-stack",
+      "title": "The crash site is rarely the root cause",
+      "md": "When a program crashes inside `useIndex`, the bug may actually be in the caller that computed a bad index and passed it in. Always walk *up* the call stack — from the frame where the symptom appeared toward `main()` — to find where the bad value originated. The crash site names the *symptom*; the caller that supplied the wrong argument is usually the *root cause*."
+    }
+  ],
+  "xrefs": []
+}

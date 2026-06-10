@@ -1,0 +1,44 @@
+{
+  "chapter": 22,
+  "lead": "Raw owning pointers are fragile — a single early `return` can bypass `delete` and silently leak memory. Chapter 22 shows how RAII wraps resources inside objects whose destructors make cleanup automatic, then teaches *move semantics*: the language mechanism that lets ownership transfer cheaply instead of copying. By the end you will confidently choose between `std::unique_ptr` and `std::shared_ptr`, write correct move constructors and move assignment operators, and understand exactly when and why to write `std::move`.",
+  "tag": "move & smart ptrs",
+  "aids": [
+    {
+      "lesson": "222---r-value-references",
+      "title": "Named rvalue-ref variables are still lvalues",
+      "md": "A variable declared `std::string&& value` has type *rvalue reference to string*, but the *expression* `value` is a named variable — and named variables are always lvalues. Think of it this way: the `&&` describes what kind of thing `value` was bound from, not what it is now. This is why you must write `std::move(value)` inside the function body to forward it as an rvalue; writing `value` alone silently routes to the lvalue overload (or causes a compile error when the destination only accepts rvalues)."
+    },
+    {
+      "lesson": "223---move-constructors-and-move-assignment",
+      "title": "Move assignment: release first, then steal",
+      "md": "Unlike a move *constructor*, move *assignment* lands in an object that already owns a resource. The first real step — after the self-assignment guard — is `delete[] m_data` (or the equivalent for your resource). Skipping this step leaks whatever the destination was holding. The order is: (1) guard self-assignment, (2) release destination's current resource, (3) copy the pointer values from the source, (4) zero the source so its destructor is harmless."
+    },
+    {
+      "lesson": "224---stdmove",
+      "title": "std::move is a cast, not a move",
+      "md": "`std::move(x)` does not move anything by itself — it is a cast that says \"treat `x` as something that may be moved from.\" The *actual transfer* of data happens only if the constructor or assignment operator that receives the result is a move operation. If no move operation exists, the compiler falls back to the copy operation instead. The practical consequence: writing `std::move(x)` and then reading `x` afterward is unsafe only when the move operation actually ran; but since you cannot always tell from a glance, treat any moved-from value as consumed and do not rely on its old contents."
+    },
+    {
+      "lesson": "226---stdshared_ptr",
+      "title": "One raw pointer, two shared_ptrs — the silent double-delete",
+      "md": "If you construct two `std::shared_ptr` objects independently from the same raw pointer, each creates its *own* control block and each thinks it is the sole owner. The reference count in each block reaches zero separately, causing the pointed-at object to be deleted twice — undefined behavior. The fix is to call `std::make_shared` once and then *copy* the resulting `shared_ptr` to share ownership; all copies point at the same control block, so the count stays accurate."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "221---introduction-to-smart-pointers-and-move-semantics",
+      "to": 19,
+      "md": "The `new`/`delete` and `new[]`/`delete[]` mechanics that smart pointers wrap — and the leak patterns they prevent — were introduced in Chapter 19."
+    },
+    {
+      "lesson": "221---introduction-to-smart-pointers-and-move-semantics",
+      "to": 21,
+      "md": "The shallow-copy trap shown here is the same double-delete hazard introduced with custom copy constructors and operator overloading in Chapter 21."
+    },
+    {
+      "lesson": "223---move-constructors-and-move-assignment",
+      "to": 21,
+      "md": "The Rule of Five extends the Rule of Three (destructor, copy constructor, copy assignment) that was introduced in Chapter 21; move constructors and move assignment operators are the two members added when move semantics enter the picture."
+    }
+  ]
+}

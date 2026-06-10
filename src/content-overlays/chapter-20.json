@@ -1,0 +1,44 @@
+{
+  "chapter": 20,
+  "lead": "Chapter 20 treats functions as first-class citizens: you will store them in pointers, pass them as arguments, write them inline as lambdas, and call them recursively. By the end you will be able to design callback-driven interfaces, express short predicates as capturing lambdas, and explain why capturing lambdas require `std::function` while raw function pointers cannot hold them.",
+  "tag": "functions II",
+  "aids": [
+    {
+      "lesson": "201--function-pointers",
+      "title": "Parentheses placement changes the meaning entirely",
+      "md": "The parentheses around `*operation` in `int (*operation)(int, int)` are mandatory — without them, `int* operation(int, int)` is a *declaration of a function that returns `int*`*, not a pointer variable at all. A helpful reading rule: start at the variable name, spiral outward — `(*operation)` means it is a pointer, then `(int, int)` means it points to a callable taking two ints, then the leading `int` is the return type."
+    },
+    {
+      "lesson": "203--recursion",
+      "title": "Two required pieces — and why naive fibonacci hurts",
+      "md": "Every recursive function needs exactly two things: a *base case* that returns a direct answer without calling itself, and a *recursive case* that calls itself with a strictly smaller input. The naive `fibonacci` example in these notes is intentionally slow — `fibonacci(n-1)` and `fibonacci(n-2)` each recompute the same sub-problems, giving exponential work. When recursion duplicates subproblems this way, a loop or memoization is always faster."
+    },
+    {
+      "lesson": "207--lambda-captures",
+      "title": "By-value captures are const — use mutable to change them",
+      "md": "A lambda's call operator is `const` by default, so a by-value capture like `[count]()` cannot increment `count` inside the lambda body — the copy is read-only. Adding `mutable` lifts the restriction: `[count]() mutable { ++count; }`. Crucially, this only modifies the *lambda's own copy*; the original variable in the surrounding scope is unaffected. Reference captures (`[&count]`) let the lambda write to the original but require the original to outlive the lambda."
+    },
+    {
+      "lesson": "207--lambda-captures",
+      "title": "Dangling reference captures when a lambda escapes its scope",
+      "md": "Capturing a local variable by reference (`[&limit]`) and then *returning* the lambda from the function is a use-after-free waiting to happen: the local dies when the function returns, leaving the lambda with a dangling reference. The fix is almost always to capture by value instead — `[limit]` stores a copy inside the closure object, so the copy survives as long as the lambda does."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "201--function-pointers",
+      "to": 10,
+      "md": "The `using Compare = bool (*)(int, int)` alias used throughout this lesson applies the type alias syntax introduced in Chapter 10."
+    },
+    {
+      "lesson": "202--the-stack-and-the-heap",
+      "to": 19,
+      "md": "Dynamic allocation with `new` and `delete` — and the heap-vs-stack lifetime distinction — were introduced in Chapter 19; this lesson builds the mental model of where heap objects live relative to the call stack."
+    },
+    {
+      "lesson": "206--introduction-to-lambdas-anonymous-functions",
+      "to": 18,
+      "md": "The `std::find_if` algorithm used in this lesson's example was introduced in Chapter 18."
+    }
+  ]
+}

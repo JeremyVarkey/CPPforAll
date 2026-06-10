@@ -1,0 +1,39 @@
+{
+  "chapter": 18,
+  "lead": "Iterators and algorithms are the vocabulary of the C++ standard library: an iterator marks a position in a container, and an algorithm walks a half-open range of iterators to search, count, sort, or transform without knowing which container it is operating on. After this chapter you will be able to use `std::find`, `std::find_if`, `std::count_if`, and `std::sort` with custom comparators, write explicit iterator loops that mirror what those algorithms do internally, and measure code performance with `<chrono>`.",
+  "tag": "iterators & algos",
+  "aids": [
+    {
+      "lesson": "182--introduction-to-iterators",
+      "title": "end() is a sentinel, not an element",
+      "md": "`end()` returns an iterator one *past* the last element — it does not point at any real value, and dereferencing it is undefined behavior. Think of it as a \"stop here\" sign at the end of a hallway: you can check whether your cursor has reached the sign (`it != end()`), but you cannot read what is written on it. Before writing `*it` after any search, always verify `it != container.end()`."
+    },
+    {
+      "lesson": "182--introduction-to-iterators",
+      "title": "Iterator invalidation after push_back",
+      "md": "When `std::vector` runs out of capacity it allocates a new, larger block of memory and moves all elements there — any iterator you held into the old storage now points at freed memory. The safe habit is to reacquire iterators *after* any operation that may resize (`push_back`, `insert`, `resize`), not to hold them across those calls."
+    },
+    {
+      "lesson": "183--introduction-to-standard-library-algorithms",
+      "title": "Strict-weak-ordering: never use <= in a sort comparator",
+      "md": "`std::sort` requires that `comp(x, x)` is always `false` (irreflexivity). A comparator like `return a <= b;` breaks this: when `a == b`, both `a <= b` and `b <= a` are true, telling the sort that each element comes before the other simultaneously — that contradiction is undefined behavior. Always use strict `<` for ascending or strict `>` for descending, so equal elements neither claim priority over each other."
+    },
+    {
+      "lesson": "183--introduction-to-standard-library-algorithms",
+      "title": "Always guard find results before dereferencing",
+      "md": "`std::find` and `std::find_if` return `end()` when no match exists — they do not throw, they do not return a null pointer, and the returned iterator looks valid until you try to dereference it. The pattern is always: call the algorithm, check `it != container.end()`, then write `*it`. Skipping the check is one of the most common sources of undefined behavior when using algorithms."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "182--introduction-to-iterators",
+      "to": 16,
+      "md": "Chapter 16 introduced `std::vector` and its `begin()`/`end()` member functions — this lesson explains what those iterators actually are and how to drive them manually."
+    },
+    {
+      "lesson": "182--introduction-to-iterators",
+      "to": 17,
+      "md": "The notes show raw pointers acting as iterators over C-style arrays, connecting directly to the pointer arithmetic and array decay covered in Chapter 17."
+    }
+  ]
+}

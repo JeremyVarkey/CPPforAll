@@ -1,0 +1,39 @@
+{
+  "chapter": 12,
+  "lead": "References and pointers are the mechanism by which C++ lets two names refer to the same memory — and getting them right is what separates code that merely compiles from code you can reason about. After this chapter you will be able to read function signatures like `bool runOnFunction(Function &F)` and `Module *M`, choose confidently between pass-by-reference and pass-by-address, and express \"no value\" through `std::optional` instead of sentinel integers.",
+  "tag": "pointers & refs",
+  "aids": [
+    {
+      "lesson": "123--lvalue-references",
+      "title": "Reseating trap: assignment through a reference",
+      "md": "After `int& ref { x };`, writing `ref = y;` does **not** make `ref` point at `y` — references cannot be reseated. It copies `y`'s value *into* `x`. If you expect two names to track two different objects at different times, you need a pointer, not a reference."
+    },
+    {
+      "lesson": "129--pointers-and-const",
+      "title": "Reading the two-const forms",
+      "md": "A helpful rule: read `const` relative to the `*`. `const int* p` — `const` is before `*`, so the *pointed-to value* is read-only through `p` (but `p` itself can be reseated). `int* const p` — `const` is after `*`, so the *pointer variable* is fixed (but you can write through it). `const int* const p` locks both."
+    },
+    {
+      "lesson": "1211--pass-by-address-part-2",
+      "title": "Passing a pointer copies the pointer",
+      "md": "When you pass `int* ptr` to a function, the function receives its own copy of the pointer value. Reassigning that local copy (e.g. `ptr = other;`) does not change the caller's pointer. To change *which object the caller's pointer points at*, you need a reference-to-pointer parameter: `int*& ptr`."
+    },
+    {
+      "lesson": "1214--type-deduction-with-pointers-references-and-const",
+      "title": "auto silently drops references and top-level const",
+      "md": "`auto y { ref };` gives you a *copy*, not a reference — `auto` strips the reference. Similarly, `auto a { x };` where `x` is `const int` deduces plain `int`. Write `auto& y { ref };` to keep the reference, and `const auto a { x };` to keep the `const`. Low-level const (in the pointed-to type of a pointer) is preserved."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "126--pass-by-const-lvalue-reference",
+      "to": 5,
+      "md": "`std::string_view`, introduced in Chapter 5 as a lightweight read-only string type, is the preferred alternative to `const std::string&` for string parameters because it avoids constructing a temporary `std::string` from a string literal."
+    },
+    {
+      "lesson": "1214--type-deduction-with-pointers-references-and-const",
+      "to": 10,
+      "md": "Type deduction with `auto` was introduced in Chapter 10; this lesson extends those rules to cover how `auto` interacts with references, `const`, and pointer declarations, including the `auto*` form."
+    }
+  ]
+}

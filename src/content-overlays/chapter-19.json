@@ -1,0 +1,39 @@
+{
+  "chapter": 19,
+  "lead": "Dynamic allocation hands you explicit control over an object's lifetime: `new` creates it on the heap, `delete` ends it — and the gap between the two is entirely your responsibility. This chapter builds the mental model for that ownership, shows where raw allocation breaks down (dangling pointers, memory leaks, mismatched `delete[]`), and introduces destructors as the foundation of the RAII idiom that makes resource management safe.",
+  "tag": "dynamic memory",
+  "aids": [
+    {
+      "lesson": "191--dynamic-memory-allocation-with-new-and-delete",
+      "title": "The pointer is not the object",
+      "md": "Think of `int* score { new int { 42 } }` as two separate things: the `int` object living on the heap, and `score` — a small variable on the stack that holds the heap object's address. `delete score` destroys the heap object; the `score` variable itself still exists afterward, which is why you null it out. Losing the only variable that holds that address — by letting it go out of scope or overwriting it — permanently severs your ability to release the heap object."
+    },
+    {
+      "lesson": "191--dynamic-memory-allocation-with-new-and-delete",
+      "title": "Dangling pointer trap with aliases",
+      "md": "When two pointers hold the same address, nulling one does **not** fix the other. After `delete first; first = nullptr;`, the variable `alias` (which copied `first`'s address earlier) still points at the freed memory — using `*alias` is undefined behavior. The ownership model for raw pointers must be established by convention: only the *owning* pointer should ever call `delete`."
+    },
+    {
+      "lesson": "192--dynamically-allocating-arrays",
+      "title": "Match the form: new[] pairs with delete[]",
+      "md": "Using scalar `delete` on an array allocated with `new[]` is undefined behavior — it may call only the first element's destructor, corrupt allocator bookkeeping, or silently do the wrong thing. The rule is mechanical: if the allocation was `new T[n]`, the release must be `delete[] ptr`. Every other combination is wrong."
+    },
+    {
+      "lesson": "193--destructors",
+      "title": "RAII: cleanup follows scope, not programmer memory",
+      "md": "RAII means the object acquires a resource in its constructor and releases it in its destructor. Once you write the destructor, you can stop tracking when to `delete` — the compiler guarantees the destructor runs when the object leaves scope, or when `delete` is called on it. This is exactly what `std::vector` does for its internal array and what `IntBuffer` in the notes illustrates for a raw heap allocation."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "192--dynamically-allocating-arrays",
+      "to": 12,
+      "md": "The ref-to-pointer parameter `int*&` used to write `nullptr` back to the caller's variable is a direct application of the out-parameter pattern introduced in Chapter 12."
+    },
+    {
+      "lesson": "194--pointers-to-pointers-and-dynamic-multidimensional-arrays",
+      "to": 12,
+      "md": "Pointer-to-pointer syntax (`int**`) extends the compound-type reading rules for pointers established in Chapter 12; the same inside-out parsing applies."
+    }
+  ]
+}

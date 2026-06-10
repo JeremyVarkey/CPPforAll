@@ -1,0 +1,39 @@
+{
+  "chapter": 4,
+  "lead": "Every value a C++ program stores or computes has a *type* — and the type controls how bits are interpreted, how much memory is used, what operations are legal, and what can silently go wrong. This chapter covers the built-in types that underpin all C++ code: integers, floating-point numbers, `bool`, `char`, and the rules for converting between them. By the end you will be able to choose the right type for a job, recognize the most common type-driven bugs (overflow, wraparound, float equality), and use `static_cast` to convert values safely and explicitly.",
+  "tag": "types",
+  "aids": [
+    {
+      "lesson": "44--signed-integers",
+      "title": "Signed overflow is not wraparound",
+      "md": "A common misconception: `INT_MAX + 1` must produce `INT_MIN`. That wrapping behavior may occur on your machine, but the C++ standard classifies signed integer overflow as *undefined behavior* — the compiler is free to assume it never happens, and optimizers exploit that assumption in ways that can silently corrupt your logic. Only unsigned arithmetic is guaranteed to wrap."
+    },
+    {
+      "lesson": "45--unsigned-integers-and-why-to-avoid-them",
+      "title": "The subtraction trap",
+      "md": "Because `unsigned` values can never be negative, subtracting past zero wraps to a huge number. The classic pitfall: `unsigned int x { 0 }; --x;` gives `4294967295`, not `-1`. Using a signed type and validating the range is safer than relying on unsigned to \"prevent\" negatives — unsigned just changes the bug, it does not eliminate it."
+    },
+    {
+      "lesson": "48--floating-point-numbers",
+      "title": "Why 0.1 + 0.2 != 0.3",
+      "md": "Binary floating-point cannot represent most decimal fractions exactly, much like decimal cannot represent 1/3 exactly. The value stored for `0.1` is the closest binary fraction — slightly off — so accumulated operations drift further from the mathematical result. Never compare floating-point values with `==`; instead check whether the difference is smaller than a small epsilon."
+    },
+    {
+      "lesson": "412--introduction-to-type-conversion-and-static_cast",
+      "title": "Cast after you guard, not before",
+      "md": "Casting a negative `int` to `std::size_t` before checking its sign produces a huge unsigned value that will pass a `< length` comparison silently. Always verify `index >= 0` first, then `static_cast<std::size_t>(index)`; the check and the cast must stay in that order."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "43--object-sizes-and-the-sizeof-operator",
+      "to": 1,
+      "md": "Object sizes connect back to the introduction of variables in Chapter 1, where every named variable occupies memory with a specific type."
+    },
+    {
+      "lesson": "412--introduction-to-type-conversion-and-static_cast",
+      "to": 2,
+      "md": "Explicit conversion with `static_cast` builds on the function and expression syntax introduced in Chapter 2, where return types and parameter types first required thinking about type compatibility."
+    }
+  ]
+}

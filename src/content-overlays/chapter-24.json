@@ -1,0 +1,28 @@
+{
+  "chapter": 24,
+  "lead": "Inheritance lets one class *be* a more specialized version of another, not just contain it — the difference between `Employee` having a name and `Employee` being a `Person`. Chapter 24 covers the mechanics: how derived objects are constructed and destroyed, how access specifiers interact with inheritance, and how function-name lookup works in a hierarchy. By the end you will be able to design simple non-virtual class families and read real-world code like LLVM's `Instruction` hierarchy with confidence.",
+  "tag": "inheritance",
+  "aids": [
+    {
+      "lesson": "244---constructors-and-initialization-of-derived-classes",
+      "title": "Why the derived constructor can't touch base private members",
+      "md": "Think of a derived object as two nested boxes: the outer box belongs to the derived class, the inner box belongs to the base class, and only the base class's constructor has the key to the inner box. Writing `: m_name { name }` in a `FunctionPass` constructor fails to compile not because of access, but because the inner box must be initialized by its own constructor — `Pass { name }`. The derived class's job is to call `Pass { name }` in its initializer list and let `Pass` handle its own members."
+    },
+    {
+      "lesson": "247---calling-inherited-functions-and-overriding-behavior",
+      "title": "Name hiding: one derived overload hides all base overloads",
+      "md": "When a derived class defines *any* function with a given name, the compiler stops searching the base class for that name entirely — it does not compare parameter types across the boundary. So `Derived::print(double)` hides *both* `Base::print(int)` and `Base::print(double)`. To restore the base overloads, add `using Base::print;` inside the derived class; that declaration brings the full base overload set into scope alongside the derived one."
+    },
+    {
+      "lesson": "245---inheritance-and-access-specifiers",
+      "title": "Inheritance type caps inherited access — it never raises it",
+      "md": "The inheritance specifier (`public`, `protected`, `private`) acts as a ceiling: it can only keep or reduce what each base member's own access level already is, never raise it. A `private` base member stays inaccessible regardless of inheritance type. Under `protected` inheritance, base `public` members become `protected` in the derived class — they are no longer reachable through a derived object from outside code. For ordinary is-a relationships, use `public` inheritance to leave the base public interface unchanged."
+    },
+    {
+      "lesson": "249---multiple-inheritance",
+      "title": "Two distinct multiple-inheritance problems: ambiguity vs. the diamond",
+      "md": "When two independent bases each provide a member with the same name (e.g. `UsbDevice::id()` and `NetworkDevice::id()`), the fix is scope qualification: `adapter.UsbDevice::id()`. This is a name-ambiguity problem — there is no shared ancestor, just a naming collision. The diamond problem is different: `Copier` inherits `Scanner` and `Printer`, both of which inherit `Device`, so a `Copier` object contains *two separate `Device` subobjects* and unqualified `Device` access is ambiguous for a deeper reason — qualifying through an intermediate path (e.g. `Scanner::` vs `Printer::`) disambiguates which copy you mean, but does not merge them into one. Virtual base classes address that single-instance question and are covered in a later chapter."
+    }
+  ],
+  "xrefs": []
+}

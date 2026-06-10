@@ -1,0 +1,34 @@
+{
+  "chapter": 2,
+  "lead": "Functions are C++'s core tool for breaking a program into named, reusable pieces — each with its own job, its own inputs, and a single clear output. By the end of this chapter you will be able to write functions that accept parameters and return values, split a project across multiple `.cpp` files joined by a linker, manage declarations with headers and header guards, and use namespaces to keep names from colliding.",
+  "tag": "functions",
+  "aids": [
+    {
+      "lesson": "22--function-return-values-value-returning-functions",
+      "title": "Missing return = undefined behavior",
+      "md": "A common mistake is writing an `int` function where one code path falls off the end without a `return` statement. The compiler may warn, but it is **not** required to — and running that path is undefined behavior, meaning the program can produce garbage, crash, or appear to work by accident. Every reachable path through a value-returning function must end with an explicit `return expr;`."
+    },
+    {
+      "lesson": "25--introduction-to-local-scope",
+      "title": "Lifetime vs scope: two different things",
+      "md": "**Scope** is a compile-time property — it governs *where in the source code* a name can be used. **Lifetime** is a runtime property — it governs *when* the storage for that variable actually exists. A variable can go out of scope (its name is no longer usable) at the same moment its lifetime ends, but the two concepts answer different questions: 'can I write this name here?' versus 'does an object live here right now?'"
+    },
+    {
+      "lesson": "27--forward-declarations-and-definitions",
+      "title": "Declare vs define vs declare-only",
+      "md": "Every *definition* is also a *declaration*, but not every declaration is a definition. A forward declaration (prototype) — `int add(int, int);` — tells the compiler the function exists and what its type is, without providing a body. The linker later connects the call site to the single definition; if that definition is never compiled and linked in, the build fails at link time, not compile time."
+    },
+    {
+      "lesson": "212--header-guards",
+      "title": "Guards stop double-inclusion, not multi-file inclusion",
+      "md": "Header guards prevent a header from being textually pasted into the *same translation unit* more than once. They do **not** prevent the header from being included in multiple `.cpp` files — which is exactly what you want. The consequence: a function *definition* in a guarded header still violates the ODR once two `.cpp` files include it, because each translation unit gets its own copy. The fix is always the same: keep declarations in the header and put the single definition in one `.cpp`."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "21--introduction-to-functions",
+      "to": 1,
+      "md": "The `main()` function introduced in Chapter 1 is itself a function — this chapter generalises that pattern to user-defined functions of any name and signature."
+    }
+  ]
+}

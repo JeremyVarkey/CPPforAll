@@ -1,0 +1,28 @@
+{
+  "chapter": 0,
+  "lead": "Before writing a single line of C++, you need a working toolchain and a mental model of what that toolchain does. This chapter walks you through the *edit → compile → link → run* pipeline, gets your compiler configured correctly, and removes the setup friction that trips up most beginners before they write `main()`.",
+  "tag": "setup",
+  "aids": [
+    {
+      "lesson": "05--introduction-to-the-compiler-linker-and-libraries",
+      "title": "Compiler vs linker: two separate jobs",
+      "md": "Think of the compiler as a *translator* and the linker as a *binder*. The compiler reads each `.cpp` file in isolation and produces a `.o` object file — it does not know about your other source files. The linker reads all the object files together and resolves cross-file references; a missing function definition shows up here as a *linker error*, not a compiler error. Keeping these two steps distinct is essential for reading error messages correctly."
+    },
+    {
+      "lesson": "09--configuring-your-compiler-build-configurations",
+      "title": "Debug vs Release: why the same code behaves differently",
+      "md": "The *debug* build turns off optimizations and embeds extra metadata so a debugger can pause on any line. The *release* build optimizes aggressively — the generated code may reorder or eliminate statements, so a debugger cannot always map execution back to your source. Always develop and test in debug; switch to release only when measuring performance or shipping."
+    },
+    {
+      "lesson": "010--configuring-your-compiler-compiler-extensions",
+      "title": "Compiler extensions look like standard C++ but are not",
+      "md": "A compiler extension is a feature the compiler adds on top of the standard — it compiles fine on GCC but may silently misbehave or outright fail on MSVC or Clang. The trap is that code using extensions *looks* like normal C++. Enabling `-pedantic-errors` (GCC/Clang) or `/permissive-` (MSVC) turns any extension use into a compile error, which is the safest way to stay portable."
+    },
+    {
+      "lesson": "013--what-language-standard-is-my-compiler-using",
+      "title": "MSVC and __cplusplus: the non-conforming default",
+      "md": "On Visual Studio, `__cplusplus` always reports `199711L` (pre-C++11) unless you add `/Zc:__cplusplus` to your compiler flags. This is a known conformance gap, not a sign your standard is wrong. The diagnostic program in this lesson sidesteps it by reading `_MSVC_LANG` instead — if you are on MSVC and get `199711L` from `__cplusplus` directly, add that flag or trust `_MSVC_LANG`."
+    }
+  ],
+  "xrefs": []
+}

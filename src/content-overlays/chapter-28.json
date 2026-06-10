@@ -1,0 +1,39 @@
+{
+  "chapter": 28,
+  "lead": "C++ I/O is built on a single stream abstraction — the same `<<` and `>>` operators, the same `std::getline`, whether you are reading from the keyboard, a file, or a `std::string` in memory. This chapter teaches you to use that abstraction fluently: formatting output precisely with `<iomanip>`, parsing structured text with string streams, reading and writing files reliably, and recovering from bad input without leaving the stream in a broken state.",
+  "tag": "streams & files",
+  "aids": [
+    {
+      "lesson": "282--input-with-istream",
+      "title": "The leftover-newline trap with >> and getline",
+      "md": "After `std::cin >> count`, the newline the user pressed is still sitting in the buffer. The very next `std::getline` call sees that newline first and immediately returns an empty string — not the next line of real input. Fix it by flushing the leftover whitespace: `std::getline(std::cin >> std::ws, name)`. The `std::ws` manipulator discards all leading whitespace (including that newline) before `getline` starts reading."
+    },
+    {
+      "lesson": "285--stream-states-and-input-validation",
+      "title": "A failed stream stays failed — clear() is the reset",
+      "md": "Once `failbit` is set on a stream, every subsequent extraction silently does nothing until you call `clear()`. This is the most common reason a recovery loop appears to retry forever: the code calls `std::cin >> value` again after a bad token but forgets to clear the flag first. The two-step pattern is always `cin.clear()` then `cin.ignore(...)` — clear the flag, then discard the bad characters."
+    },
+    {
+      "lesson": "284--stream-classes-for-strings",
+      "title": "Reusing a stringstream — two resets required",
+      "md": "Calling only `stream.str(\"\")` resets the stored text but leaves any error flags intact, so subsequent extractions silently fail. Calling only `stream.clear()` resets the flags but the old text is still there. To fully reset a reused `std::stringstream`, you need both: `stream.clear()` first, then `stream.str(\"\")`. When parsing a fresh line in a loop it is often simpler to just construct a new `std::istringstream` from that line."
+    },
+    {
+      "lesson": "286--basic-file-io",
+      "title": "Relative paths resolve from the working directory, not the source file",
+      "md": "Opening `std::ifstream file { \"seeds.txt\" }` looks for the file relative to wherever the program is *run from*, not where `main.cpp` lives. If your binary is in `build/` and `seeds.txt` is in the project root, the file will not be found. When `if (!file)` fires on a path you are sure exists, the first thing to check is your working directory."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "281--input-and-output-streams",
+      "to": 21,
+      "md": "The `operator<<` and `operator>>` used on streams are overloaded operators — the same mechanism covered in Chapter 21."
+    },
+    {
+      "lesson": "284--stream-classes-for-strings",
+      "to": 5,
+      "md": "`std::ostringstream` builds a `std::string` result, so `std::string` familiarity from Chapter 5 applies directly when calling `.str()`."
+    }
+  ]
+}

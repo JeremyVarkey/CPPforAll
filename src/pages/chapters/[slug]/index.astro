@@ -35,6 +35,8 @@ const lessonWord = notes.lessons.length === 1 ? 'lesson' : 'lessons';
       )}
     </div>
 
+    {notes.leadHtml && <div set:html={notes.leadHtml} />}
+
     <nav class="toc" aria-label="Lessons in this chapter">
       <div class="toc-label">In this chapter</div>
       <ol>

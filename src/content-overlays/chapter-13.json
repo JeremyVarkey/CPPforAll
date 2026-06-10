@@ -1,0 +1,44 @@
+{
+  "chapter": 13,
+  "lead": "C++ lets you define your own types — enumerations that give names to a closed set of values, and structs that bundle related data under one label. After this chapter you will be able to model a problem domain with `enum class` and `struct`, write the helper functions that operate on them, and confidently apply aggregate initialization, `const`-reference passing, and the `.` vs `->` member-access distinction.",
+  "tag": "enums & structs",
+  "aids": [
+    {
+      "lesson": "133--unscoped-enumerator-integral-conversions",
+      "title": "One-way implicit conversion: enum to int, not int to enum",
+      "md": "The implicit conversion for an unscoped enum runs in only one direction: an enumerator silently converts *to* an integer, so `std::cout << green` compiles and prints `1`. The reverse — assigning a raw integer *to* an enum variable — always requires an explicit cast: `Color c { static_cast<Color>(2) }`. Writing `Color c { 2 }` is ill-formed and will not compile, which is exactly the type-safety boundary the lesson is explaining."
+    },
+    {
+      "lesson": "138--struct-aggregate-initialization",
+      "title": "Declaration order is initialization order",
+      "md": "In aggregate initialization, values in the brace list are matched to struct members *in the order those members are declared*, not by name. If `Point` declares `x` first and `y` second, then `Point p { 1, 2 }` sets `x = 1` and `y = 2` — swapping the numbers in the braces swaps the fields, not the names. Any member that has no corresponding value in the list is value-initialized (zero for `int`)."
+    },
+    {
+      "lesson": "1312--member-selection-with-pointers-and-references",
+      "title": ". for objects and references, -> for pointers",
+      "md": "A reference and an object use identical syntax at the call site: both use `.`. The `->` operator is *only* for pointers — `ptr->line` is shorthand for `(*ptr).line`. If you see LLVM code with `M->getOrInsertFunction()`, `M` is a pointer; if you see `I.getDebugLoc()`, `I` is an object or reference."
+    },
+    {
+      "lesson": "1313--class-templates",
+      "title": "Templates generate types, not instances",
+      "md": "`template <typename T> struct Pair` is a *pattern*, not a usable type on its own. Writing `Pair<int>` asks the compiler to stamp out a concrete `struct` where every `T` is replaced with `int`; `Pair<double>` stamps out a separate concrete struct. You must supply the type argument (or let CTAD deduce it) before you can create an object — `Pair p` with no argument is an error unless deduction is available."
+    }
+  ],
+  "xrefs": [
+    {
+      "lesson": "134--converting-an-enumeration-to-and-from-a-string",
+      "to": 12,
+      "md": "The `std::optional<Campaign>` return type used in the string-to-enum helper was introduced in Chapter 12 as the clean way to represent a value that may or may not exist."
+    },
+    {
+      "lesson": "1310--passing-and-returning-structs",
+      "to": 12,
+      "md": "Passing structs by `const T&` and mutating through `T&` applies the reference and pointer conventions established in Chapter 12."
+    },
+    {
+      "lesson": "1313--class-templates",
+      "to": 11,
+      "md": "The requirement that template definitions be visible at the point of use — placing them in headers rather than `.cpp` files — follows the same logic as function templates introduced in Chapter 11."
+    }
+  ]
+}
