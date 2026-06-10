@@ -16,6 +16,7 @@
     "@fontsource-variable/jetbrains-mono": "^5.2.5",
     "@fontsource-variable/source-serif-4": "^5.2.5",
     "@fontsource-variable/space-grotesk": "^5.2.5",
+    "@wasmer/sdk": "^0.10.0",
     "astro": "^5.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

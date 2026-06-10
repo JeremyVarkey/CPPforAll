@@ -72,8 +72,15 @@ On the **Visual Studio Enterprise Subscription** (Option B — always pass `--su
   `ambitious-grass-0d1b3c60f.7.azurestaticapps.net`. Deploys via
   `.github/workflows/deploy.yml` on push to main (token in repo secret
   `AZURE_STATIC_WEB_APPS_API_TOKEN`; rotate via `az staticwebapp secrets`).
-- Not yet done: apex/www DNS records + custom-domain TLS (the public launch step —
-  gated on the licensing pass, which has a clean sampled result already).
+- **LIVE: https://cppforall.com** (launched 2026-06-10). Apex = Azure DNS alias A record →
+  the SWA resource; TXT `_dnsauth` validation; DigiCert managed TLS. `www` = CNAME to the
+  default hostname (validation/cert auto-completing). Note: SWA cannot do host-based
+  redirects, so www serves the same content rather than 301ing — canonical tags point at
+  the apex, which handles SEO. Licensing gate passed pre-launch (sampled originality
+  check: 10 distinctive LearnCpp phrases × 29 notes files, zero hits).
+- Lighthouse (chapter page): performance 98 · a11y 96 · best-practices 100 · SEO 100.
+  Pages ship ZERO framework JS (rail search is vanilla; React arrives only with the
+  Phase B runner island).
 
 ## Content source & pipeline
 **Single source of truth** (do not author content here directly — it lives upstream):

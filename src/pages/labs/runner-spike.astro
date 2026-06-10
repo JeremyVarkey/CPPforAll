@@ -1,0 +1,101 @@
+---
+/**
+ * B0 SPIKE — unlinked lab page. Proves (or kills) in-browser clang:
+ *   1. load @wasmer/sdk + clang/clang from the Wasmer registry
+ *   2. compile chapter 02's REAL grader: tests.cpp + geo.cpp (2 TUs, C++17)
+ *   3. run the produced wasm, capture stdout/exit code
+ *   4. measure download + compile + run wall-clock
+ * Not linked from anywhere; not part of the product. Phase B1 productizes.
+ */
+import drill from '../../generated/drills/chapter-02.json';
+
+const files = Object.fromEntries(
+  drill.files.map((f: { path: string; code: string }) => [f.path, f.code]),
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>runner spike</title>
+    <style>
+      body { font: 14px/1.5 ui-monospace, monospace; background: #1a1916; color: #e9e5d9; padding: 24px; max-width: 900px; margin: 0 auto; }
+      button { font: inherit; padding: 8px 16px; background: #d97757; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+      button:disabled { opacity: .4; }
+      #log { white-space: pre-wrap; margin-top: 16px; border: 1px solid #34322b; border-radius: 8px; padding: 14px; min-height: 200px; }
+      .ok { color: #90a673; } .err { color: #e0997a; } .info { color: #7fa8d4; }
+    </style>
+  </head>
+  <body>
+    <h1>B0 — in-browser clang spike</h1>
+    <div>crossOriginIsolated: <b id="coi"></b></div>
+    <p><button id="go">Run spike: compile ch02 grader (2 TUs) + run</button></p>
+    <div id="log"></div>
+
+    <script type="application/json" id="files-data" set:html={JSON.stringify(files)} />
+    <script>
+      const files = JSON.parse(document.getElementById('files-data')!.textContent!);
+      const log = document.getElementById('log') as HTMLElement;
+      const t0: Record<string, number> = {};
+      function line(msg: string, cls?: string) {
+        const el = document.createElement('div');
+        el.textContent = msg;
+        if (cls) el.className = cls;
+        log.appendChild(el);
+      }
+      function mark(name: string) { t0[name] = performance.now(); }
+      function ms(name: string) { return Math.round(performance.now() - t0[name]) + 'ms'; }
+
+      (document.getElementById('coi') as HTMLElement).textContent = String(globalThis.crossOriginIsolated);
+
+      (document.getElementById('go') as HTMLButtonElement).onclick = async () => {
+        (document.getElementById('go') as HTMLButtonElement).disabled = true;
+        try {
+          line('importing @wasmer/sdk…', 'info');
+          mark('sdk');
+          const { init, Wasmer, Directory } = await import('@wasmer/sdk');
+          await init();
+          line(`sdk ready in ${ms('sdk')}`, 'ok');
+
+          line('fetching clang/clang from registry (first run downloads the toolchain)…', 'info');
+          mark('clang');
+          const clang = await Wasmer.fromRegistry('clang/clang');
+          line(`clang package ready in ${ms('clang')}`, 'ok');
+
+          const project = new Directory();
+          await project.writeFile('geo.h', files['geo.h'] ?? '');
+          await project.writeFile('geo.cpp', files['starter/geo.cpp'] ? files['solution/geo.cpp'] : '');
+          await project.writeFile('tests.cpp', files['tests/tests.cpp'] ?? '');
+          line('project mounted: geo.h, geo.cpp (solution), tests.cpp', 'ok');
+
+          line('compiling: clang++ -std=c++17 tests.cpp geo.cpp -o run.wasm …', 'info');
+          mark('compile');
+          const compile = await clang.entrypoint.run({
+            args: ['-std=c++17', '-Wall', '-Wextra', '-I/project',
+                   '/project/tests.cpp', '/project/geo.cpp', '-o', '/project/run.wasm'],
+            mount: { '/project': project },
+          });
+          const cOut = await compile.wait();
+          line(`compile exit=${cOut.code} in ${ms('compile')}`, cOut.code === 0 ? 'ok' : 'err');
+          if (cOut.stderr) line('stderr: ' + cOut.stderr.slice(0, 1200), cOut.code === 0 ? 'info' : 'err');
+          if (cOut.code !== 0) return;
+
+          line('running the produced wasm…', 'info');
+          mark('run');
+          const wasm = await project.readFile('run.wasm');
+          const prog = await Wasmer.fromFile(wasm);
+          const run = await prog.entrypoint.run({});
+          const rOut = await run.wait();
+          line(`run exit=${rOut.code} in ${ms('run')}`, rOut.code === 0 ? 'ok' : 'err');
+          line('stdout:\n' + rOut.stdout, 'ok');
+          if (rOut.stderr) line('stderr: ' + rOut.stderr, 'info');
+          line('=== SPIKE COMPLETE ===', 'ok');
+        } catch (e) {
+          line('FATAL: ' + (e && e.message ? e.message : String(e)), 'err');
+          console.error(e);
+        }
+      };
+    </script>
+  </body>
+</html>
