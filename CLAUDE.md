@@ -48,7 +48,17 @@ work depends on it.
   (id `5f6c172f-abad-4b16-a972-d8795dc3b27a`, same tenant `7db35776-1daa-4d76-b234-979b83e4ecab`).
 - Why this sub: it's separate from company billing and carries a **monthly Azure credit**,
   so the static site runs at **$0 out of pocket**.
-- *Open confirm:* Jeremy to confirm the VS Enterprise subscription is his to use here.
+- ✅ Confirmed: the VS Enterprise subscription is approved for this project.
+
+## Infrastructure (provisioned)
+On the **Visual Studio Enterprise Subscription** (Option B — always pass `--subscription`):
+- Resource group: `rg-cppforall` (region `eastus2`)
+- Azure DNS zone: `cppforall.com` — nameservers:
+  `ns1-09.azure-dns.com` · `ns2-09.azure-dns.net` · `ns3-09.azure-dns.org` · `ns4-09.azure-dns.info`
+- ✅ **Delegation live:** cppforall.com nameservers now point to Azure DNS (verified via
+  Google + Cloudflare resolvers and an authoritative check). All records managed via `az`.
+- Not yet created: the Static Web App (waits for a buildable Astro site) and the
+  apex/www records + TLS (added after delegation resolves).
 
 ## Content source & pipeline
 **Single source of truth** (do not author content here directly — it lives upstream):
@@ -56,9 +66,13 @@ work depends on it.
 - `notes/chapter-NN.md` — chapter notes (Codex authors these upstream).
 - `drills/chapter-NN/` — exercises (Claude builds these upstream). 28 chapters + chapter-00.
 
-Content is **vendored/synced** into this repo as the site's source (a sync script copies
-notes + drills in). Re-run the sync to pull upstream updates. Upstream ownership rules
-(Codex = notes, Claude = drills) still apply in the source folder.
+Content is **vendored/synced** into this repo at **`content/`** (`content/notes/` +
+`content/drills/`) by **`scripts/sync-content.sh`** — a faithful, build-artifact-free
+snapshot. Re-run that script to pull upstream updates (it mirrors with `rsync --delete`).
+Do NOT hand-edit `content/` — edit upstream and re-sync. Upstream ownership rules
+(Codex = notes, Claude = drills) still apply in the source folder. The site build (Astro)
+will consume `content/`; the three personal root files (learning-log, llvm-idioms,
+learncpp-progress) are intentionally NOT vendored.
 
 ## The exercise model (so the site renders it correctly)
 Each `drills/chapter-NN/` exercise has a fixed shape:
@@ -85,7 +99,8 @@ Each `drills/chapter-NN/` exercise has a fixed shape:
 
 ## Status
 - [x] Repo cloned to `~/Desktop/CPPforAll`, this guide created.
+- [x] Azure DNS zone `cppforall.com` created on the VS Enterprise sub; NS delegation live (Azure authoritative).
 - [ ] Scaffold Astro + Starlight.
 - [ ] Wire **chapter 1 end-to-end** as the template (notes page + exercise code boxes).
-- [ ] Sync script for notes + drills.
+- [x] Sync script `scripts/sync-content.sh` → vendored 29 notes + 28 drills into `content/`.
 - [ ] Render locally for review, then provision SWA + point the domain.
