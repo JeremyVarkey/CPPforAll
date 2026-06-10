@@ -160,27 +160,59 @@ function CodeEditor({
 
   useEffect(() => {
     if (!host.current) return;
-    const state = EditorState.create({
-      doc: value,
-      extensions: [
-        ...baseExtensions,
-        readOnlyComp.current.of([
-          EditorState.readOnly.of(readOnly),
-          EditorView.editable.of(!readOnly),
-        ]),
-        EditorView.updateListener.of((u) => {
-          if (u.docChanged && onChangeRef.current) {
-            onChangeRef.current(u.state.doc.toString());
-          }
-        }),
-      ],
-    });
-    const v = new EditorView({ state, parent: host.current });
-    view.current = v;
-    viewRef?.(v);
+    let cancelled = false;
+    let v: EditorView | null = null;
+
+    // CodeMirror caches font metrics at mount. If the mono webfont swaps in
+    // afterwards, every cached line-height/char-width is stale and scrolled
+    // text paints over itself ("overlapping, unreadable"). So: load the font
+    // BEFORE first measure, and re-measure on any later font-load event.
+    const mount = () => {
+      if (cancelled || !host.current) return;
+      const state = EditorState.create({
+        doc: value,
+        extensions: [
+          ...baseExtensions,
+          readOnlyComp.current.of([
+            EditorState.readOnly.of(readOnly),
+            EditorView.editable.of(!readOnly),
+          ]),
+          EditorView.updateListener.of((u) => {
+            if (u.docChanged && onChangeRef.current) {
+              onChangeRef.current(u.state.doc.toString());
+            }
+          }),
+        ],
+      });
+      v = new EditorView({ state, parent: host.current });
+      view.current = v;
+      viewRef?.(v);
+    };
+
+    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+    if (fonts?.load) {
+      // Ask for the exact face the theme uses; race against a short timeout so
+      // a hung font fetch can never block the editor from appearing.
+      const want = fonts.load('13px "JetBrains Mono Variable"').catch(() => []);
+      Promise.race([want, new Promise((r) => setTimeout(r, 800))]).then(mount);
+      // Belt and braces: any later font arrival → recompute CM's metrics.
+      const remeasure = () => view.current?.requestMeasure();
+      fonts.addEventListener?.('loadingdone', remeasure);
+      fonts.ready?.then(remeasure).catch(() => {});
+      return () => {
+        cancelled = true;
+        fonts.removeEventListener?.('loadingdone', remeasure);
+        viewRef?.(null);
+        v?.destroy();
+        view.current = null;
+      };
+    }
+
+    mount();
     return () => {
+      cancelled = true;
       viewRef?.(null);
-      v.destroy();
+      v?.destroy();
       view.current = null;
     };
     // Mount once per file identity; `value` resets are handled via the imperative
