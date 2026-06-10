@@ -1,0 +1,43 @@
+{
+  "chapter": 15,
+  "project": "IdCard Badge Printer",
+  "editable": [
+    "starter/idcard.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/idcard.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra"
+        ],
+        "include": []
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/idcard.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra"
+      ],
+      "include": []
+    },
+    "run": {}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "chapter": 22,
+  "project": "TrackedBuffer",
+  "editable": [
+    "starter/tracked_buffer.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/tracked_buffer.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra"
+        ],
+        "include": []
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/tracked_buffer.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra"
+      ],
+      "include": []
+    },
+    "run": {}
+  }
+}

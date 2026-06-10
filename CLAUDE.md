@@ -39,8 +39,22 @@ button can slot in **without a rewrite**.
   preserved from source TOC slugs). Generated output in `src/generated/` (gitignored).
   Agent enrichment lives in `src/content-overlays/chapter-NN.json` ("marked study aids"
   policy: lead + aids + xrefs only, validated, visually distinct on page).
-- **Editor (Phase B):** CodeMirror 6, not Monaco. Runner: Wasmer SDK clang in a Web Worker,
-  COOP/COEP via staticwebapp.config.json; grader manifests in `public/graders/`.
+- **Authored content tier:** `src/content-authored/chapter-NN.md` — the site's own
+  lecture-grade text (Opus-authored, Opus-validated), preferred by `build-notes.mjs` over
+  the vendored notes. Heading contract: H1 + `## N.M — Title` lessons must match the source
+  (anchors stay stable); bodies are authored. The vendored `content/notes/` remain the
+  factual reference and Codex's tree — never hand-edit either tier casually.
+- **Runner (LIVE):** server judge, NOT in-browser wasm. B0 spike measured wasmer clang/clang
+  at ~25KB/s effective compile throughput (libc++ → 200s+; flattened-header experiment also
+  failed) — see docs/runner-plan.md for the full verdict + revisit conditions. Architecture:
+  CodeMirror 6 island (`src/islands/ExerciseRunner.tsx`, graceful static fallback) → POST to
+  the judge (Azure Container Apps `cppforall-judge` in rg-cppforall, image in ACR
+  `cppforallacr`, scale 0–3): clang per grader manifest (`judge/manifests/chapter-NN.json`,
+  generated from the Makefiles by `scripts/build-grader-manifests.mjs`), solution/ never on
+  the serving image, tests server-side (hidden-tests property), rlimits + wall-kill + rate
+  limiting. Judge URL via `PUBLIC_JUDGE_URL` (.env + deploy.yml). Round-trip ≈ 0.9–2.5s.
+  Rebuild+deploy judge: `az acr build --registry cppforallacr -f judge/Dockerfile .` then
+  `az containerapp update` (always `--subscription "Visual Studio Enterprise Subscription"`).
 - **Host:** Azure Static Web Apps (free tier). Deploy via **GitHub Actions** (push → live);
   the SWA deploy token lives in GitHub/Azure secrets — **never paste secrets into chat.**
 - **Domain:** Squarespace-registered. At deploy, Jeremy adds the CNAME/TXT records in the

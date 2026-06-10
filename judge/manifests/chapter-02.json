@@ -1,0 +1,49 @@
+{
+  "chapter": 2,
+  "project": "geo mini-library",
+  "editable": [
+    "starter/geo.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/geo.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-I."
+        ],
+        "include": [
+          "-I."
+        ]
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/geo.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-I."
+      ],
+      "include": [
+        "-I."
+      ]
+    },
+    "run": {}
+  }
+}

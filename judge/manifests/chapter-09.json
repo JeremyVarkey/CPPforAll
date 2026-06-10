@@ -1,0 +1,70 @@
+{
+  "chapter": 9,
+  "project": "Robust Input Desk",
+  "editable": [
+    "starter/desk.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/desk.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra"
+        ],
+        "include": []
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    },
+    {
+      "name": "cin recovery",
+      "compile": {
+        "sources": [
+          "tests/cin_driver.cpp",
+          "starter/desk.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra"
+        ],
+        "include": []
+      },
+      "run": {
+        "stdin": "tests/cin_input.txt"
+      },
+      "verdict": {
+        "type": "grepDiff",
+        "pattern": "^ACCEPTED=",
+        "stdin": "tests/cin_input.txt",
+        "expectedLines": [
+          "ACCEPTED=7",
+          "ACCEPTED=50"
+        ]
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/desk.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra"
+      ],
+      "include": []
+    },
+    "run": {}
+  }
+}

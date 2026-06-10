@@ -1,0 +1,50 @@
+{
+  "chapter": 24,
+  "project": "Report-Logger Family",
+  "editable": [
+    "starter/logger.cpp",
+    "starter/main.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/logger.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-I."
+        ],
+        "include": [
+          "-I."
+        ]
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/logger.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-I."
+      ],
+      "include": [
+        "-I."
+      ]
+    },
+    "run": {}
+  }
+}

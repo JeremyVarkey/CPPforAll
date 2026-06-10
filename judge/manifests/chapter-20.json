@@ -1,0 +1,49 @@
+{
+  "chapter": 20,
+  "project": "calc-core Lab",
+  "editable": [
+    "starter/calccore.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/calccore.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-I."
+        ],
+        "include": [
+          "-I."
+        ]
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/calccore.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-I."
+      ],
+      "include": [
+        "-I."
+      ]
+    },
+    "run": {}
+  }
+}

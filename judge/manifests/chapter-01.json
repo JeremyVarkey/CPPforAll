@@ -1,0 +1,47 @@
+{
+  "chapter": 1,
+  "project": "Cash Register",
+  "editable": [
+    "starter/main.cpp"
+  ],
+  "steps": [
+    {
+      "name": "output check",
+      "compile": {
+        "sources": [
+          "starter/main.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra"
+        ],
+        "include": []
+      },
+      "run": {
+        "stdin": "tests/input.txt"
+      },
+      "verdict": {
+        "type": "diffExpected",
+        "stdin": "tests/input.txt",
+        "expected": "tests/expected.txt"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "starter/main.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra"
+      ],
+      "include": []
+    },
+    "run": {
+      "stdin": "tests/input.txt"
+    }
+  }
+}

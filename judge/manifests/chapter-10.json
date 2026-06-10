@@ -1,0 +1,43 @@
+{
+  "chapter": 10,
+  "project": "statkit",
+  "editable": [
+    "starter/statkit.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/statkit.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra"
+        ],
+        "include": []
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/statkit.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra"
+      ],
+      "include": []
+    },
+    "run": {}
+  }
+}

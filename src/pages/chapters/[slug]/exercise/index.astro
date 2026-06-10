@@ -3,6 +3,7 @@
 import AppShell from '../../../../layouts/AppShell.astro';
 import Icon from '../../../../components/Icon.astro';
 import chapters from '../../../../generated/chapters.json';
+import ExerciseRunner from '../../../../islands/ExerciseRunner';
 
 export function getStaticPaths() {
   return chapters.filter((c) => c.hasDrill).map((c) => ({ params: { slug: c.slug } }));
@@ -72,56 +73,70 @@ const langLabel = (l: string | null) => (l === 'cpp' ? 'C++' : l === 'make' ? 'M
       </div>
     </div>
 
-    <div class="files-head" role="tablist" aria-label="Exercise files">
+    {/*
+      Static file viewer + reserved run-slot. The ExerciseRunner island below
+      mounts client-side; on a successful judge-manifest probe it ACTIVATES,
+      takes over tabs+editor, and hides this whole block by setting
+      `document.querySelector('[data-static-files]').hidden = true`. If the judge
+      is unreachable the island renders only a quiet "runner offline" note and
+      this static viewer stays visible — the page never looks broken without JS
+      or without the judge. (See src/islands/ExerciseRunner.tsx header.)
+    */}
+    <div data-static-files>
+      <div class="files-head" role="tablist" aria-label="Exercise files">
+        {files.map((f, i) => (
+          <button
+            class={'file-tab' + (i === 0 ? ' on' : '')}
+            data-pane={`pane-${f.kind}-${f.name.replace(/[^a-zA-Z0-9]/g, '-')}`}
+            role="tab"
+            aria-selected={i === 0 ? 'true' : 'false'}
+          >
+            <span class={`kindtag ${f.kind}`}>{f.kind}</span>
+            {f.name}
+          </button>
+        ))}
+      </div>
       {files.map((f, i) => (
-        <button
-          class={'file-tab' + (i === 0 ? ' on' : '')}
-          data-pane={`pane-${f.kind}-${f.name.replace(/[^a-zA-Z0-9]/g, '-')}`}
-          role="tab"
-          aria-selected={i === 0 ? 'true' : 'false'}
+        <div
+          class="file-pane"
+          id={`pane-${f.kind}-${f.name.replace(/[^a-zA-Z0-9]/g, '-')}`}
+          hidden={i !== 0}
         >
-          <span class={`kindtag ${f.kind}`}>{f.kind}</span>
-          {f.name}
-        </button>
-      ))}
-    </div>
-    {files.map((f, i) => (
-      <div
-        class="file-pane"
-        id={`pane-${f.kind}-${f.name.replace(/[^a-zA-Z0-9]/g, '-')}`}
-        hidden={i !== 0}
-      >
-        <div class="codebox" style="border-radius: 0 12px 12px 12px; margin-top: 0;">
-          <div class="codebox-head">
-            <div class="cb-dots"><i></i><i></i><i></i></div>
-            <span class="cb-file">{f.path}</span>
-            {langLabel(f.lang) && <span class="cb-lang">{langLabel(f.lang)}</span>}
-            <div class="cb-actions">
-              <button class="cb-btn" data-cb="copy" aria-label={`Copy ${f.name}`}>
-                <Icon name="copy" /><span>Copy</span>
-              </button>
-              <button class="cb-btn" data-cb="download" data-file={f.name} aria-label={`Download ${f.name}`}>
-                <Icon name="download" /><span>Download</span>
-              </button>
+          <div class="codebox" style="border-radius: 0 12px 12px 12px; margin-top: 0;">
+            <div class="codebox-head">
+              <div class="cb-dots"><i></i><i></i><i></i></div>
+              <span class="cb-file">{f.path}</span>
+              {langLabel(f.lang) && <span class="cb-lang">{langLabel(f.lang)}</span>}
+              <div class="cb-actions">
+                <button class="cb-btn" data-cb="copy" aria-label={`Copy ${f.name}`}>
+                  <Icon name="copy" /><span>Copy</span>
+                </button>
+                <button class="cb-btn" data-cb="download" data-file={f.name} aria-label={`Download ${f.name}`}>
+                  <Icon name="download" /><span>Download</span>
+                </button>
+              </div>
+            </div>
+            <div class="codebox-body">
+              <pre set:html={f.codeHtml} />
             </div>
           </div>
-          <div class="codebox-body">
-            <pre set:html={f.codeHtml} />
-          </div>
         </div>
-      </div>
-    ))}
+      ))}
 
-    <div class="run-slot">
-      <div class="run-fake"><Icon name="play" /> Run</div>
-      <div class="run-fake" style="background: var(--success);"><Icon name="check" /> Submit</div>
-      <div class="run-note">
-        <b>Run in your browser — coming soon</b>
-        For now: copy or download the files and use <code>make test</code> locally
-        (see “Build &amp; run locally” above).
+      <div class="run-slot">
+        <div class="run-fake"><Icon name="play" /> Run</div>
+        <div class="run-fake" style="background: var(--success);"><Icon name="check" /> Submit</div>
+        <div class="run-note">
+          <b>Run in your browser — coming soon</b>
+          For now: copy or download the files and use <code>make test</code> locally
+          (see “Build &amp; run locally” above).
+        </div>
+        <div class="results-strip"><i></i><i></i><i></i><i></i></div>
       </div>
-      <div class="results-strip"><i></i><i></i><i></i><i></i></div>
     </div>
+
+    {/* The live Run/Submit island — owns tabs+editor when the judge is reachable. */}
+    <ExerciseRunner client:only="react" chapter={chapter.num} files={files} project={drill.project} />
   </div>
 </AppShell>
 

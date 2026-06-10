@@ -1,0 +1,49 @@
+{
+  "chapter": 25,
+  "project": "MINI-LLVM",
+  "editable": [
+    "starter/inst.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/inst.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-I."
+        ],
+        "include": [
+          "-I."
+        ]
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/inst.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-I."
+      ],
+      "include": [
+        "-I."
+      ]
+    },
+    "run": {}
+  }
+}

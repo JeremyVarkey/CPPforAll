@@ -1,0 +1,49 @@
+{
+  "chapter": 16,
+  "project": "Sensor-Readings Toolkit",
+  "editable": [
+    "starter/sensor.cpp"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp",
+          "starter/sensor.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-I."
+        ],
+        "include": [
+          "-I."
+        ]
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp",
+        "starter/sensor.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-I."
+      ],
+      "include": [
+        "-I."
+      ]
+    },
+    "run": {}
+  }
+}

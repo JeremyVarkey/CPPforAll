@@ -1,0 +1,16 @@
+{
+  "name": "cppforall-judge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Code-execution judge for CPPforAll: compiles + grades learner C++ drills in a sandboxed container.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check runner.mjs && node --check test-manifests.mjs",
+    "test-manifests": "node test-manifests.mjs"
+  },
+  "dependencies": {}
+}

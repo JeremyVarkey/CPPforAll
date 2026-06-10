@@ -85,15 +85,16 @@ html[data-rail="collapsed"] .rail{width:0;flex-basis:0;border-right:0;}
 .search{position:relative;}
 .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted);pointer-events:none;}
 .search input{
-  width:100%;height:38px;padding:0 32px 0 34px;
+  width:100%;height:38px;padding:0 38px 0 36px; /* [polish] room for the clear button */
   font-family:var(--sans);font-size:14px;color:var(--ink);
   background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-input);
   transition:border-color .15s, box-shadow .15s, background .15s;
 }
 .search input::placeholder{color:var(--muted);}
 .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);background:var(--canvas);}
-.search .clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;}
+.search .clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;} /* [polish] breathing room + larger hit area */
 .search .clear:hover{background:var(--subtle);color:var(--ink);}
+.search .clear svg{width:13px;height:13px;}
 
 .rail-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 18px 4px;}
 
@@ -252,7 +253,7 @@ a.callout.xref:hover{border-color:var(--info);}
 .cb-file{font-family:var(--mono);font-size:12.5px;color:#cfcabb;font-weight:500;}
 .cb-lang{font-family:var(--sans);font-size:11px;color:#8a8775;border:1px solid var(--code-line);border-radius:5px;padding:1px 7px;}
 .cb-actions{margin-left:auto;display:flex;gap:6px;}
-.cb-btn{display:flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12px;color:#cfcabb;background:transparent;border:1px solid var(--code-line);border-radius:7px;padding:4px 9px;cursor:pointer;transition:background .14s,color .14s,border-color .14s;}
+.cb-btn{display:flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12px;color:#cfcabb;background:transparent;border:1px solid var(--code-line);border-radius:7px;padding:5px 11px;cursor:pointer;transition:background .14s,color .14s,border-color .14s;} /* [polish] */
 .cb-btn:hover{background:#33312a;color:#fff;border-color:#4a473c;}
 .cb-btn.ok{color:var(--tk-type);border-color:var(--tk-type);}
 .cb-btn svg{width:13px;height:13px;}
@@ -286,7 +287,7 @@ a.callout.xref:hover{border-color:var(--info);}
 .handout .ex-sum a{color:var(--accent-press);}
 .ex-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
 .ex-cols>.ex-block{min-width:0;} /* [delta] wide code blocks must scroll, not blow the column */
-@media (max-width:680px){.ex-cols{grid-template-columns:1fr;gap:18px;}}
+@media (max-width:760px){.ex-cols{grid-template-columns:1fr;gap:18px;}} /* [polish] stack earlier — the criteria code block needs width */
 .ex-block h3{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
 .ex-block h3 svg{width:15px;height:15px;color:var(--ink2);}
 .ex-tasks{counter-reset:t;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;}
@@ -311,8 +312,12 @@ a.callout.xref:hover{border-color:var(--info);}
 .ex-more .d-body ul li{font-size:15px;padding-left:0;margin:6px 0;}
 .ex-more .d-body ul li::before{display:none;}
 
-/* file tabs */
-.files-head{display:flex;align-items:center;gap:6px;margin:6px 0 0;flex-wrap:wrap;}
+/* file tabs — single row, horizontal scroll (wrapping detached the active
+   tab from its codebox and read as overlap; see Linear/VS Code tab idiom) */
+.files-head{display:flex;align-items:flex-end;gap:6px;margin:6px 0 0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--muted) transparent;padding-bottom:0;}
+.files-head::-webkit-scrollbar{height:6px;}
+.files-head::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:6px;}
+.files-head .file-tab{flex:0 0 auto;white-space:nowrap;}
 .file-tab{font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ink2);background:transparent;border:1px solid transparent;border-radius:8px 8px 0 0;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:color .14s,background .14s;}
 .file-tab:hover{color:var(--ink);}
 .file-tab.on{color:var(--ink);background:var(--code-bg);}

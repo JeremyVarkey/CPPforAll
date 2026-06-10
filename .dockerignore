@@ -1,0 +1,54 @@
+# .dockerignore for the CPPforAll judge.
+#
+# NOTE ON LOCATION: the judge is built with the REPO ROOT as the build context
+#   (docker build -f judge/Dockerfile -t cppforall-judge .)
+# Docker reads the ignore file from the CONTEXT ROOT, or — if present — the
+# Dockerfile-adjacent "<dockerfile>.dockerignore". To make these rules apply with
+# the root context, EITHER copy this file to the repo root as `.dockerignore`,
+# OR (Docker 23+/BuildKit) keep it here renamed to `judge/Dockerfile.dockerignore`.
+# The README documents this. The patterns below are written relative to the repo
+# root so they work in whichever location you place them.
+
+# ── Never ship the reference solutions in the build context ───────────────────
+# (The Dockerfile also strips solution/ after the replay gate, but excluding the
+# bulk of unrelated content keeps the context small and the build fast. We do NOT
+# exclude content/drills/**/solution here because the build-time replay gate needs
+# it; it is removed inside the image after the gate runs.)
+
+# ── Site / app code the judge does not need ───────────────────────────────────
+src/
+public/
+design/
+docs/
+scripts/
+node_modules/
+**/node_modules/
+dist/
+.astro/
+src/generated/
+
+# ── Notes (the judge only needs drills) ───────────────────────────────────────
+content/notes/
+
+# ── VCS / tooling / editor noise ──────────────────────────────────────────────
+.git/
+.github/
+.gitignore
+.vscode/
+.idea/
+**/.DS_Store
+
+# ── Build artifacts that might exist inside drills locally ────────────────────
+content/drills/**/*.o
+content/drills/**/*.dSYM/
+content/drills/**/run
+content/drills/**/cin_run
+content/drills/**/starter/app
+content/drills/**/solution/app
+content/drills/**/tests/.*.txt
+content/drills/**/tests/run
+content/drills/**/__judge_*
+
+# ── The judge's own dev cruft ─────────────────────────────────────────────────
+judge/node_modules/
+judge/*.log

@@ -19,6 +19,8 @@ jobs:
           node-version: 22
           cache: npm
       - name: Build
+        env:
+          PUBLIC_JUDGE_URL: https://cppforall-judge.wonderfulsky-b4c94e17.eastus2.azurecontainerapps.io
         run: |
           npm ci
           npm run build

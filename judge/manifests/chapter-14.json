@@ -1,0 +1,47 @@
+{
+  "chapter": 14,
+  "project": "Fraction Class",
+  "editable": [
+    "starter/fraction.h"
+  ],
+  "steps": [
+    {
+      "name": "unit tests",
+      "compile": {
+        "sources": [
+          "tests/tests.cpp"
+        ],
+        "flags": [
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-Istarter"
+        ],
+        "include": [
+          "-Istarter"
+        ]
+      },
+      "run": {},
+      "verdict": {
+        "type": "exitCode"
+      }
+    }
+  ],
+  "runStep": {
+    "compile": {
+      "sources": [
+        "tests/tests.cpp"
+      ],
+      "flags": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-Istarter"
+      ],
+      "include": [
+        "-Istarter"
+      ]
+    },
+    "run": {}
+  }
+}
