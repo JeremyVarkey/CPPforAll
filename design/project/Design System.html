@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CPPforAll — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="cpp-styles.css"/>
+<style>
+  body{background:var(--canvas);}
+  .sheet{max-width:1080px;margin:0 auto;padding:56px 40px 120px;}
+  .sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:8px;}
+  .sheet-title{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);}
+  .sheet h1{font-family:var(--serif);font-size:40px;font-weight:600;letter-spacing:-.02em;margin:6px 0 8px;color:var(--ink);}
+  .sheet .intro{font-family:var(--serif);font-size:18px;line-height:1.6;color:var(--ink2);max-width:620px;margin:0 0 6px;}
+  .theme-btn{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:8px 16px;cursor:pointer;white-space:nowrap;}
+  .theme-btn:hover{border-color:var(--accent);}
+
+  section.block{margin-top:56px;}
+  .block-label{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--hairline);padding-bottom:10px;margin-bottom:26px;}
+  .grid{display:grid;gap:18px;}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr 1fr;}}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:22px;}
+  .card.flush{padding:0;overflow:hidden;}
+  .card h3{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);margin:0 0 16px;}
+  .cap{font-family:var(--sans);font-size:11.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;}
+
+  /* color swatches */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  .sw{border:1px solid var(--hairline);border-radius:10px;overflow:hidden;background:var(--canvas);}
+  .sw .chip{height:64px;}
+  .sw .meta{padding:9px 11px;}
+  .sw .nm{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);}
+  .sw .hex{font-family:var(--mono);font-size:11.5px;color:var(--ink2);margin-top:2px;}
+
+  /* type specimens */
+  .spec-row{display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px solid var(--hairline);}
+  .spec-row:last-child{border-bottom:0;}
+  .spec-tag{font-family:var(--mono);font-size:11.5px;color:var(--muted);min-width:170px;flex:0 0 auto;}
+  .demo-display{font-family:var(--sans);font-size:30px;font-weight:600;letter-spacing:-.02em;color:var(--ink);}
+  .demo-title{font-family:var(--sans);font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);}
+  .demo-h2{font-family:var(--sans);font-size:18px;font-weight:600;color:var(--ink);}
+  .demo-body{font-family:var(--serif);font-size:17px;line-height:1.7;color:var(--ink);}
+  .demo-ui{font-family:var(--sans);font-size:14px;font-weight:500;color:var(--ink);}
+  .demo-small{font-family:var(--sans);font-size:13px;color:var(--ink2);}
+  .demo-code{font-family:var(--mono);font-size:13.5px;color:var(--ink);}
+
+  .row-list{display:flex;flex-direction:column;gap:6px;}
+  .state-tag{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 0 6px;}
+
+  /* radius + motion demos */
+  .radii{display:flex;gap:18px;flex-wrap:wrap;}
+  .radii .ri{text-align:center;}
+  .radii .box{width:74px;height:60px;background:var(--accent-tint);border:1px solid var(--accent);}
+  .radii .lab{font-family:var(--mono);font-size:11px;color:var(--ink2);margin-top:8px;}
+  .motion li{font-family:var(--serif);font-size:15.5px;color:var(--ink);line-height:1.6;}
+  .motion code{font-family:var(--mono);font-size:.84em;background:var(--subtle);padding:1px 5px;border-radius:4px;}
+
+  .tokens-pre{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:var(--code-fg);background:var(--code-bg);border:1px solid var(--code-line);border-radius:12px;padding:18px 20px;overflow-x:auto;}
+  .tokens-pre .c{color:var(--tk-com);}
+  .tokens-pre .k{color:var(--tk-kw);}
+  .tokens-pre .v{color:var(--tk-str);}
+
+  /* forced component states for the spec */
+  .ch-row.force-hover{background:var(--subtle);}
+  .ch-row.force-focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+  .force-focus-input{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-tint);}
+</style>
+</head>
+<body>
+<div class="app" id="sheet" data-theme="light" style="height:auto;display:block;overflow:visible;">
+<div class="sheet">
+
+  <div class="sheet-head">
+    <div>
+      <div class="sheet-title">CPPforAll · Design System</div>
+      <h1>Tokens &amp; Components</h1>
+      <p class="intro">The calm, editorial building blocks behind the chapter learning interface — warm cream surfaces, ink type, and a single precious coral. Built for Astro + CSS variables.</p>
+    </div>
+    <button class="theme-btn" id="tbtn" onclick="toggleTheme()">◐ Dark preview</button>
+  </div>
+
+  <!-- COLOR -->
+  <section class="block">
+    <div class="block-label">Color</div>
+    <div class="cap">Surfaces &amp; ink</div>
+    <div class="swatches" id="sw-neutral"></div>
+    <div class="cap" style="margin-top:22px;">Accent &amp; semantic — coral is reserved for the active chapter, links, and the primary action</div>
+    <div class="swatches" id="sw-accent"></div>
+  </section>
+
+  <!-- TYPE -->
+  <section class="block">
+    <div class="block-label">Type · Space Grotesk · Source Serif 4 · JetBrains Mono</div>
+    <div class="card">
+      <div class="spec-row"><span class="spec-tag">Display / 30 · Grotesk 600</span><span class="demo-display">Pointers &amp; References</span></div>
+      <div class="spec-row"><span class="spec-tag">Title / 22 · Grotesk 600</span><span class="demo-title">Memory is a long street of boxes</span></div>
+      <div class="spec-row"><span class="spec-tag">H2 / 18 · Grotesk 600</span><span class="demo-h2">References: a second name</span></div>
+      <div class="spec-row"><span class="spec-tag">Body / 17 · Serif · 1.7</span><span class="demo-body">A pointer is a variable that holds an address.</span></div>
+      <div class="spec-row"><span class="spec-tag">UI / 14–15 · Grotesk 500</span><span class="demo-ui">Notes · Code · Search chapters</span></div>
+      <div class="spec-row"><span class="spec-tag">Small / 13 · Grotesk</span><span class="demo-small">11 min read · memory</span></div>
+      <div class="spec-row"><span class="spec-tag">Code / 13.5 · JetBrains</span><span class="demo-code">int* p = &amp;score;</span></div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section class="block">
+    <div class="block-label">Components · Chapter row</div>
+    <div class="grid g2">
+      <div class="card">
+        <p class="state-tag">default · hover</p>
+        <div class="row-list">
+          <button class="ch-row"><span class="ch-num">07</span><span class="ch-main"><span class="ch-title">Functions</span><span class="ch-tag">functions</span></span></button>
+          <button class="ch-row force-hover"><span class="ch-num">08</span><span class="ch-main"><span class="ch-title">Arrays &amp; Vectors</span><span class="ch-tag">containers</span></span></button>
+        </div>
+      </div>
+      <div class="card">
+        <p class="state-tag">active · focus</p>
+        <div class="row-list">
+          <button class="ch-row active"><span class="ch-num">10</span><span class="ch-main"><span class="ch-title">Pointers &amp; References</span><span class="ch-tag">memory</span></span></button>
+          <button class="ch-row force-focus"><span class="ch-num">11</span><span class="ch-main"><span class="ch-title">Dynamic Memory</span><span class="ch-tag">memory</span></span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">Components · Controls</div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Notes / Code toggle</h3>
+        <div class="seg" style="margin-bottom:14px;"><div class="thumb" style="left:3px;width:96px;"></div><button class="on">Notes</button><button>Code</button></div>
+        <p class="state-tag">Active = raised neutral pill · inactive = quiet gray</p>
+      </div>
+      <div class="card">
+        <h3>Search field</h3>
+        <div class="search" style="margin-bottom:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg><input placeholder="Search chapters…"/></div>
+        <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg><input class="force-focus-input" value="pointers"/></div>
+        <p class="state-tag" style="margin-top:10px;">default · focus (coral ring)</p>
+      </div>
+    </div>
+    <div class="grid g3" style="margin-top:18px;">
+      <div class="card"><h3>Primary</h3><button class="btn btn-primary">Start chapter</button></div>
+      <div class="card"><h3>Secondary / ghost</h3><button class="btn btn-ghost">Download all</button></div>
+      <div class="card"><h3>Icon button</h3><button class="icon-btn" style="border:1px solid var(--hairline);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">Components · Callouts</div>
+    <div class="grid g3">
+      <div class="callout tip" style="margin:0;"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5.9 1.1.9 1.8V16h5.2v-.3c0-.7.3-1.3.9-1.8A6 6 0 0 0 12 3Z"/></svg></span><div class="body"><div class="ctitle">Tip</div><p>The <code>*</code> binds to the type, not the name.</p></div></div>
+      <div class="callout warn" style="margin:0;"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17.5h.01"/></svg></span><div class="body"><div class="ctitle">Watch out</div><p>Dereferencing a <code>nullptr</code> is undefined behaviour.</p></div></div>
+      <div class="callout xref" style="margin:0;"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.5 1.5"/><path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5L12.5 16.5"/></svg></span><div class="body"><div class="ctitle">Builds on</div><p>Chapter 8 — Arrays &amp; Vectors.</p></div></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">Components · Code box &amp; future Run slot</div>
+    <div class="codebox" style="margin:0 0 18px;">
+      <div class="codebox-head"><div class="cb-dots"><i></i><i></i><i></i></div><span class="cb-file">references.cpp</span><span class="cb-lang">C++</span><div class="cb-actions"><button class="cb-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>Copy</button><button class="cb-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>Download</button></div></div>
+      <div class="codebox-body"><pre data-cpp="1">int score = 42;
+int&amp; alias = score;    // alias IS score, by another name
+alias = 99;
+std::cout &lt;&lt; score;    // 99</pre></div>
+    </div>
+    <div class="run-slot">
+      <div class="run-fake"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5.5v13l11-6.5z"/></svg> Run</div>
+      <div class="run-fake" style="background:var(--success);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Submit</div>
+      <div class="run-note"><b>Phase 2 — reserved</b>Editor &amp; results strip slot here. No redesign.</div>
+      <div class="results-strip"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <!-- SPACING / SHAPE / MOTION -->
+  <section class="block">
+    <div class="block-label">Spacing · Radius · Motion</div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Radius scale</h3>
+        <div class="radii">
+          <div class="ri"><div class="box" style="border-radius:8px;"></div><div class="lab">8 · inputs/rows</div></div>
+          <div class="ri"><div class="box" style="border-radius:12px;"></div><div class="lab">12 · cards/code</div></div>
+          <div class="ri"><div class="box" style="border-radius:16px;"></div><div class="lab">16 · panels</div></div>
+          <div class="ri"><div class="box" style="border-radius:999px;"></div><div class="lab">pill · toggle</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Motion — subtle &amp; quick</h3>
+        <ul class="motion" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;">
+          <li>Rail collapse / expand — <code>180ms</code> ease slide</li>
+          <li>Toggle thumb — <code>200ms</code> slide</li>
+          <li>Notes ↔ Code swap — <code>~160ms</code> soft rise</li>
+          <li>Honors <code>prefers-reduced-motion</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOKENS -->
+  <section class="block">
+    <div class="block-label">Tokens · drop-in CSS variables</div>
+    <pre class="tokens-pre"><span class="c">/* Light (default) */</span>
+<span class="k">--canvas</span>:<span class="v">#faf9f5</span>; <span class="k">--surface</span>:<span class="v">#f2efe6</span>; <span class="k">--subtle</span>:<span class="v">#e8e6dc</span>; <span class="k">--hairline</span>:<span class="v">#e7e4da</span>;
+<span class="k">--ink</span>:<span class="v">#141413</span>; <span class="k">--ink-2</span>:<span class="v">#6f6e66</span>; <span class="k">--muted</span>:<span class="v">#b0aea5</span>;
+<span class="k">--accent</span>:<span class="v">#d97757</span>; <span class="k">--accent-press</span>:<span class="v">#c45f3f</span>; <span class="k">--success</span>:<span class="v">#788c5d</span>; <span class="k">--info</span>:<span class="v">#6a9bcc</span>;
+
+<span class="c">/* Dark (warm charcoal) */</span>
+<span class="k">--canvas</span>:<span class="v">#1a1916</span>; <span class="k">--surface</span>:<span class="v">#232118</span>; <span class="k">--subtle</span>:<span class="v">#2c2a23</span>; <span class="k">--hairline</span>:<span class="v">#34322b</span>;
+<span class="k">--ink</span>:<span class="v">#faf9f5</span>; <span class="k">--ink-2</span>:<span class="v">#b0aea5</span>; <span class="k">--accent</span>:<span class="v">#d97757</span>;
+
+<span class="c">/* Radius */</span> <span class="k">--r-input</span>:<span class="v">8px</span>; <span class="k">--r-card</span>:<span class="v">12px</span>; <span class="k">--r-panel</span>:<span class="v">16px</span>;
+<span class="c">/* Type  */</span> <span class="k">--sans</span>:<span class="v">"Space Grotesk"</span>; <span class="k">--serif</span>:<span class="v">"Source Serif 4"</span>; <span class="k">--mono</span>:<span class="v">"JetBrains Mono"</span>;</pre>
+  </section>
+
+</div>
+</div>
+
+<script src="cpp-highlight.js"></script>
+<script>
+  const NEUTRAL = [
+    ["Canvas", "#faf9f5", "#1a1916"], ["Surface", "#f2efe6", "#232118"],
+    ["Subtle fill", "#e8e6dc", "#2c2a23"], ["Hairline", "#e7e4da", "#34322b"],
+    ["Ink", "#141413", "#faf9f5"], ["Ink secondary", "#6f6e66", "#b0aea5"], ["Muted", "#b0aea5", "#75726a"],
+  ];
+  const ACCENT = [
+    ["Coral", "#d97757", "#d97757"], ["Coral pressed", "#c45f3f", "#c45f3f"],
+    ["Coral tint", "rgba(217,119,87,.14)", "rgba(217,119,87,.20)"],
+    ["Success", "#788c5d", "#90a673"], ["Info", "#6a9bcc", "#7fa8d4"],
+  ];
+  function renderSwatches() {
+    const dark = document.getElementById("sheet").getAttribute("data-theme") === "dark";
+    const make = (arr) => arr.map(([nm, l, d]) => {
+      const hex = dark ? d : l;
+      return `<div class="sw"><div class="chip" style="background:${hex}"></div><div class="meta"><div class="nm">${nm}</div><div class="hex">${hex}</div></div></div>`;
+    }).join("");
+    document.getElementById("sw-neutral").innerHTML = make(NEUTRAL);
+    document.getElementById("sw-accent").innerHTML = make(ACCENT);
+  }
+  function toggleTheme() {
+    const el = document.getElementById("sheet");
+    const dark = el.getAttribute("data-theme") === "dark";
+    el.setAttribute("data-theme", dark ? "light" : "dark");
+    document.getElementById("tbtn").textContent = dark ? "◐ Dark preview" : "◐ Light preview";
+    renderSwatches();
+  }
+  // highlight code boxes
+  document.querySelectorAll('pre[data-cpp]').forEach(pre => {
+    const txt = pre.textContent;
+    pre.innerHTML = window.cppHighlight(txt);
+  });
+  renderSwatches();
+</script>
+</body>
+</html>
