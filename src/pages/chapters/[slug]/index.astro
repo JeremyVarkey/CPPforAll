@@ -20,6 +20,7 @@ const lessonWord = notes.lessons.length === 1 ? 'lesson' : 'lessons';
   title={`Chapter ${chapter.num} — ${chapter.title} · CPPforAll`}
   description={`Chapter ${chapter.num} of CPPforAll's free C++ course: ${chapter.title}. ${notes.lessons.length} ${lessonWord}, with a hands-on lab.`}
 >
+  <div class="reader-wrap">
   <article class="reader swap">
     <div class="ch-kicker">Chapter {chapter.num} · {chapter.tag}</div>
     <h1 class="ch-display">{chapter.title}</h1>
@@ -61,6 +62,76 @@ const lessonWord = notes.lessons.length === 1 ? 'lesson' : 'lessons';
       </aside>
     )}
   </article>
+
+  <nav class="side-toc" aria-label="On this page">
+    <div class="st-label">On this page</div>
+    <ol>
+      {notes.lessons.map((l: { anchor: string; title: string }) => (
+        <li><a href={`#${l.anchor}`} data-st-link={l.anchor}>{l.title}</a></li>
+      ))}
+    </ol>
+  </nav>
+  </div>
+
+  <script is:inline>
+    /* Scrollspy for the sticky side TOC — plain scroll math, not
+       IntersectionObserver (IO silently stops firing in backgrounded
+       webviews; 16 rect reads per rAF tick is nothing). Idempotent and
+       re-inits on soft navigations. */
+    (function () {
+      if (!window.__cppTocSpy) {
+        window.__cppTocSpy = {};
+        document.addEventListener('astro:page-load', function () { window.__cppTocInit && window.__cppTocInit(); });
+      }
+      window.__cppTocInit = function () {
+        if (window.__cppTocSpy.cleanup) { window.__cppTocSpy.cleanup(); window.__cppTocSpy.cleanup = null; }
+        var toc = document.querySelector('.side-toc');
+        var scroller = document.getElementById('scroll');
+        if (!toc || !scroller) return;
+        var sections = Array.prototype.slice.call(document.querySelectorAll('.reader section'))
+          .map(function (sec) { var h = sec.querySelector('h2[id]'); return h ? { sec: sec, id: h.id } : null; })
+          .filter(Boolean);
+        if (!sections.length) return;
+
+        var current = null;
+        function setActive(id) {
+          if (id === current) return;
+          current = id;
+          toc.querySelectorAll('a').forEach(function (a) {
+            var on = a.dataset.stLink === id;
+            a.classList.toggle('on', on);
+            if (on && a.scrollIntoView) a.scrollIntoView({ block: 'nearest' });
+          });
+        }
+
+        function pick() {
+          if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8) {
+            return sections[sections.length - 1].id; // bottom: last section wins
+          }
+          var fold = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.35;
+          var active = sections[0].id;
+          for (var i = 0; i < sections.length; i++) {
+            if (sections[i].sec.getBoundingClientRect().top <= fold) active = sections[i].id;
+            else break;
+          }
+          return active;
+        }
+
+        // Synchronous on purpose: scroll events are already frame-paced, the
+        // work is 16 rect reads, and rAF/timers are starved in backgrounded
+        // tabs (which made a scheduled spy lag or freeze).
+        function onScroll() { setActive(pick()); }
+        scroller.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        window.__cppTocSpy.cleanup = function () {
+          scroller.removeEventListener('scroll', onScroll);
+          window.removeEventListener('resize', onScroll);
+        };
+        setActive(pick());
+      };
+      window.__cppTocInit();
+    })();
+  </script>
 </AppShell>
 
 <style>
@@ -68,9 +139,38 @@ const lessonWord = notes.lessons.length === 1 ? 'lesson' : 'lessons';
   .toc-label{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
   .toc ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;counter-reset:none;}
   .toc li{font-family:var(--sans);font-size:13.5px;line-height:1.45;}
-  .toc a{color:var(--ink2);text-decoration:none;}
-  .toc a:hover{color:var(--accent-press);}
+  .toc a{color:var(--ink2);text-decoration:underline;text-decoration-color:color-mix(in srgb, var(--muted) 35%, transparent);text-underline-offset:3px;transition:color .12s, text-decoration-color .12s;}
+  .toc a:hover{color:var(--accent-press);text-decoration-color:var(--accent);}
   :global([data-theme='dark']) .toc a:hover{color:var(--accent);}
+
+  /* anchored jumps shouldn't kiss the very top edge */
+  .reader :global(h2[id]){scroll-margin-top:18px;}
+
+  /* ---------- sticky side TOC (wide screens) ---------- */
+  .reader-wrap{display:block;}
+  .side-toc{display:none;}
+  @media (min-width: 1240px){
+    .reader-wrap{display:grid;grid-template-columns:minmax(0,720px) 232px;justify-content:center;column-gap:44px;}
+    .reader-wrap .reader{margin:0;max-width:720px;}
+    .side-toc{
+      display:block;position:sticky;top:0;align-self:start;
+      max-height:calc(100dvh - 60px);overflow-y:auto;
+      padding:46px 0 24px 4px;
+      scrollbar-width:thin;scrollbar-color:var(--subtle) transparent;
+    }
+    .st-label{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+    .side-toc ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;}
+    .side-toc li{font-family:var(--sans);font-size:12.5px;line-height:1.4;}
+    .side-toc a{
+      display:block;color:var(--muted);text-decoration:none;
+      padding:5px 10px;border-left:2px solid var(--hairline);
+      transition:color .12s, border-color .12s, background .12s;
+      overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    }
+    .side-toc a:hover{color:var(--ink);}
+    .side-toc a.on{color:var(--accent-press);border-left-color:var(--accent);background:var(--accent-tint);border-radius:0 6px 6px 0;font-weight:500;}
+    :global([data-theme='dark']) .side-toc a.on{color:var(--accent);}
+  }
   .next-lab{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid var(--hairline);background:var(--surface);border-radius:var(--r-panel);padding:20px 24px;margin-top:46px;flex-wrap:wrap;}
   .next-lab .nl-kicker{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
   .next-lab p{font-family:var(--serif);font-size:16px;color:var(--ink2);margin:0;}
