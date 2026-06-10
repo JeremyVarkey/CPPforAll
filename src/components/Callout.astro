@@ -1,0 +1,24 @@
+---
+/** Callout — tip / warn / xref / aid (the agent-added "study aid" kind,
+ *  visually distinct per the enrichment policy). Body comes via slot. */
+import Icon from './Icon.astro';
+
+interface Props {
+  kind: 'tip' | 'warn' | 'xref' | 'aid';
+  title?: string;
+  href?: string;  // xref target
+}
+const { kind, title, href } = Astro.props;
+const icons = { tip: 'bulb', warn: 'alert', xref: 'link', aid: 'bulb' } as const;
+const labels = { tip: 'Tip', warn: 'Watch out', xref: 'Builds on', aid: 'Study aid' } as const;
+const label = title ?? labels[kind];
+const Tag = kind === 'xref' && href ? 'a' : 'div';
+---
+
+<Tag class={`callout ${kind}`} href={kind === 'xref' ? href : undefined}>
+  <span class="ico"><Icon name={icons[kind]} /></span>
+  <div class="body">
+    <div class="ctitle">{label}</div>
+    <slot />
+  </div>
+</Tag>

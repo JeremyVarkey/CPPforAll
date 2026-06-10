@@ -1,0 +1,23 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<AppShell
+  current={null}
+  view={null}
+  title="Not found — CPPforAll"
+  description="That page doesn't exist. Pick a chapter from the rail to keep learning C++."
+>
+  <div class="landing swap">
+    <Icon name="spark" class="spark-lg" />
+    <h1>Nothing at this address.</h1>
+    <p>
+      That page doesn't exist — but 29 chapters of C++ do. Pick one from the
+      sidebar, or head back to the start.
+    </p>
+    <div class="start-tags">
+      <a class="start-chip" href="/">← Back home</a>
+    </div>
+  </div>
+</AppShell>

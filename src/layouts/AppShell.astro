@@ -1,0 +1,191 @@
+---
+/**
+ * AppShell — the two-zone frame from the design: collapsible chapter rail
+ * (left) + canvas (top bar above scrollable content). Ported from the
+ * prototype's App component; rail collapse / mobile drawer / theme are
+ * vanilla inline scripts so every page stays static HTML.
+ */
+import '@fontsource-variable/space-grotesk';
+import '@fontsource-variable/source-serif-4';
+import '@fontsource-variable/source-serif-4/wght-italic.css';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/cpp-styles.css';
+
+import Rail from '../components/Rail.astro';
+import Icon from '../components/Icon.astro';
+import chapters from '../generated/chapters.json';
+
+interface Props {
+  /** active chapter number, or null on the landing page */
+  current?: number | null;
+  /** which view this page is, for the toggle + crumb */
+  view?: 'notes' | 'code' | null;
+  title: string;
+  description: string;
+}
+const { current = null, view = null, title, description } = Astro.props;
+const chapter = current === null ? null : chapters.find((c) => c.num === current) ?? null;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <script is:inline>
+      /* theme + rail state before first paint — no flash */
+      (function () {
+        try {
+          var t = localStorage.getItem('cpp-theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.dataset.theme = t;
+          if (localStorage.getItem('cpp-rail') === 'collapsed') {
+            document.documentElement.dataset.rail = 'collapsed';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <script is:inline>
+        /* runs synchronously before the rail paints */
+        if (document.documentElement.dataset.rail === 'collapsed') {
+          document.getElementById('app').classList.add('collapsed');
+        }
+      </script>
+
+      <!-- collapsed strip (desktop) -->
+      <div class="strip">
+        <button class="icon-btn" data-action="expand" aria-label="Expand sidebar" title="Expand sidebar">
+          <Icon name="sidebar" />
+        </button>
+        <Icon name="spark" class="spark" />
+      </div>
+
+      <div class="scrim" data-action="drawer-close"></div>
+
+      <aside class="rail" aria-label="Chapters">
+        <Rail chapters={chapters} current={current} />
+      </aside>
+
+      <main class="canvas">
+        <div class="canvas-top">
+          <button class="icon-btn hamb" data-action="drawer-open" aria-label="Open chapters">
+            <Icon name="menu" />
+          </button>
+          <div class="expand-zone">
+            <button class="icon-btn" data-action="expand" aria-label="Expand sidebar" title="Expand sidebar">
+              <Icon name="chevR" />
+            </button>
+          </div>
+          {chapter && (
+            <div class="crumb">Chapter {chapter.num} · <b>{chapter.title}</b></div>
+          )}
+          <div class="top-spacer"></div>
+          {chapter && chapter.hasDrill && view && (
+            <nav class="seg" data-view={view} aria-label="View">
+              <div class="thumb"></div>
+              <a href={`/chapters/${chapter.slug}/`} class={view === 'notes' ? 'on' : ''} aria-current={view === 'notes' ? 'page' : undefined}>
+                <Icon name="book" /> Notes
+              </a>
+              <a href={`/chapters/${chapter.slug}/exercise/`} class={view === 'code' ? 'on' : ''} aria-current={view === 'code' ? 'page' : undefined}>
+                <Icon name="code" /> Code
+              </a>
+            </nav>
+          )}
+          <button class="icon-btn" data-action="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+            <span class="show-light"><Icon name="moon" /></span>
+            <span class="show-dark"><Icon name="sun" /></span>
+          </button>
+        </div>
+
+        <div class="scroll" id="scroll">
+          <slot />
+        </div>
+      </main>
+    </div>
+
+    <style>
+      /* theme button shows the icon for the mode you'd switch TO */
+      .show-light, .show-dark { display: contents; }
+      :global([data-theme='dark']) .show-light { display: none; }
+      :global(html:not([data-theme='dark'])) .show-dark { display: none; }
+    </style>
+
+    <script is:inline>
+      (function () {
+        var app = document.getElementById('app');
+        function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+        document.addEventListener('click', function (e) {
+          var el = e.target.closest('[data-action]');
+          if (el) {
+            var a = el.dataset.action;
+            if (a === 'collapse') { app.classList.add('collapsed'); document.documentElement.dataset.rail = 'collapsed'; save('cpp-rail', 'collapsed'); }
+            if (a === 'expand') { app.classList.remove('collapsed'); delete document.documentElement.dataset.rail; save('cpp-rail', 'open'); }
+            if (a === 'drawer-open') { app.classList.add('drawer-open'); }
+            if (a === 'drawer-close') { app.classList.remove('drawer-open'); }
+            if (a === 'theme') {
+              var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+              document.documentElement.dataset.theme = next;
+              save('cpp-theme', next);
+            }
+            return;
+          }
+
+          /* codebox copy / download (event delegation; works for every box) */
+          var btn = e.target.closest('.cb-btn');
+          if (btn) {
+            var box = btn.closest('.codebox');
+            var pre = box && box.querySelector('pre');
+            if (!pre) return;
+            var text = pre.textContent || '';
+            if (btn.dataset.cb === 'copy' && navigator.clipboard) {
+              navigator.clipboard.writeText(text).then(function () {
+                btn.classList.add('ok');
+                var label = btn.querySelector('span'); var old = label.textContent;
+                label.textContent = 'Copied';
+                setTimeout(function () { btn.classList.remove('ok'); label.textContent = old; }, 1400);
+              });
+            }
+            if (btn.dataset.cb === 'download') {
+              var blob = new Blob([text], { type: 'text/plain' });
+              var url = URL.createObjectURL(blob);
+              var a2 = document.createElement('a');
+              a2.href = url; a2.download = btn.dataset.file || 'code.txt'; a2.click();
+              setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+            }
+            return;
+          }
+
+          /* exercise file tabs */
+          var tab = e.target.closest('.file-tab');
+          if (tab && tab.dataset.pane) {
+            var head = tab.closest('.files-head');
+            var wrap = head && head.parentElement;
+            if (!wrap) return;
+            head.querySelectorAll('.file-tab').forEach(function (t) { t.classList.toggle('on', t === tab); });
+            wrap.querySelectorAll('.file-pane').forEach(function (p) {
+              p.hidden = p.id !== tab.dataset.pane;
+            });
+          }
+        });
+
+        /* keep the active chapter row in view */
+        var active = document.querySelector('.ch-row.active');
+        if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+---
+/** Dark code box with traffic dots, filename, language chip, copy/download.
+ *  `html` is pre-highlighted markup (Shiki at build time); falls back to
+ *  escaped plain text via the <pre> slot when no highlighting is wanted. */
+interface Props {
+  file: string;
+  lang?: string | null;
+  html?: string;        // pre-highlighted <code> innerHTML
+  code?: string;        // raw text fallback (escaped by Astro)
+  flat?: boolean;       // square top-left corner (under file tabs)
+}
+const { file, lang = null, html = undefined, code = undefined, flat = false } = Astro.props;
+---
+
+<div class="codebox" style={flat ? 'border-radius: 0 12px 12px 12px; margin-top: 0;' : undefined}>
+  <div class="codebox-head">
+    <div class="cb-dots"><i></i><i></i><i></i></div>
+    <span class="cb-file">{file}</span>
+    {lang && <span class="cb-lang">{lang}</span>}
+    <div class="cb-actions">
+      <button class="cb-btn" data-cb="copy" aria-label={`Copy ${file}`}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+        <span>Copy</span>
+      </button>
+      <button class="cb-btn" data-cb="download" data-file={file} aria-label={`Download ${file}`}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+        <span>Download</span>
+      </button>
+    </div>
+  </div>
+  <div class="codebox-body">
+    {html !== undefined
+      ? <pre set:html={html} />
+      : <pre>{code}</pre>}
+  </div>
+</div>

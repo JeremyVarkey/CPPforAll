@@ -1,0 +1,50 @@
+---
+/** Chapter rail — brand, search, the 29 chapter rows, footer. Rows are real
+ *  links (static HTML); only the search filter hydrates (RailSearch island). */
+import Icon from './Icon.astro';
+import RailSearch from './RailSearch.tsx';
+
+interface Chapter {
+  num: number; slug: string; title: string; tag: string; hasDrill: boolean;
+}
+interface Props { chapters: Chapter[]; current: number | null }
+const { chapters, current } = Astro.props;
+---
+
+<div class="rail-inner">
+  <div class="rail-head">
+    <div class="brand">
+      <a class="brand-mark" href="/" title="Home" aria-label="CPPforAll home">
+        <Icon name="spark" class="spark" />
+        <span class="brand-name">CPP<b>for</b>All</span>
+      </a>
+      <button class="icon-btn" data-action="collapse" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <Icon name="sidebar" />
+      </button>
+    </div>
+    <RailSearch client:idle total={chapters.length} />
+  </div>
+  <div class="rail-label" id="rail-label">All chapters</div>
+  <div class="chapters" id="chapter-list">
+    {chapters.map((c) => (
+      <a
+        class={'ch-row' + (current === c.num ? ' active' : '')}
+        href={`/chapters/${c.slug}/`}
+        aria-current={current === c.num ? 'page' : undefined}
+        data-ch-row
+        data-num={c.num}
+        data-search={`${c.num} chapter ${c.num} ${c.title} ${c.tag}`.toLowerCase()}
+      >
+        <span class="ch-num">{c.slug}</span>
+        <span class="ch-main">
+          <span class="ch-title">{c.title}</span>
+          <span class="ch-tag">{c.tag}</span>
+        </span>
+      </a>
+    ))}
+    <div class="no-results" id="no-results" hidden></div>
+  </div>
+  <div class="rail-foot">
+    <span class="foot-meta">29 chapters · free &amp; open</span>
+  </div>
+</div>

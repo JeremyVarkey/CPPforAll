@@ -1,0 +1,34 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import Icon from '../components/Icon.astro';
+import chapters from '../generated/chapters.json';
+
+/* spread of starting points, mirroring the prototype's landing chips */
+const chipNums = [1, 8, 12, 14, 19, 25];
+const chips = chipNums
+  .map((n) => chapters.find((c) => c.num === n))
+  .filter((c) => c != null);
+---
+
+<AppShell
+  current={null}
+  view={null}
+  title="CPPforAll — Learn C++ from scratch, free"
+  description="A calm, free place to learn C++: 29 chapters of notes and hands-on labs you can read and practice right in your browser."
+>
+  <div class="landing swap">
+    <Icon name="spark" class="spark-lg" />
+    <h1>Learn C++ from scratch.</h1>
+    <p>
+      A calm, free place to read and practice — 29 chapters of notes and
+      hands-on labs, right in your browser. Pick a chapter to begin.
+    </p>
+    <div class="start-tags">
+      {chips.map((c) => (
+        <a class="start-chip" href={`/chapters/${c.slug}/`}>
+          {c.slug} · {c.title}
+        </a>
+      ))}
+    </div>
+  </div>
+</AppShell>

@@ -1,0 +1,6 @@
+
+# --- site build ---
+node_modules/
+dist/
+.astro/
+src/generated/
