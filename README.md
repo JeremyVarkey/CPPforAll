@@ -47,7 +47,6 @@ Operating guide for AI-agent contributors: `CLAUDE.md`. Product direction:
 `docs/roadmap.md`.
 
 ## License & provenance
-Course content is original synthesis written for this site (topic sequence inspired
-by the excellent [learncpp.com](https://www.learncpp.com), which we link to and
-recommend). A formal open-source license for the code is pending — until then,
-all rights reserved.
+Code is [MIT-licensed](LICENSE). Course content is original synthesis written for
+this site (topic sequence inspired by the excellent
+[learncpp.com](https://www.learncpp.com), which we link to and recommend).
