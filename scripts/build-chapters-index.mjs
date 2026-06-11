@@ -54,12 +54,19 @@ export async function buildChaptersIndex() {
       );
       if (typeof overlay.tag === 'string' && overlay.tag.length <= 22) tag = overlay.tag;
     } catch {}
+    // practice (R2 micro-drills) exists for chapters with an authored practice file
+    let hasPractice = false;
+    try {
+      await readFile(path.join(ROOT, 'src/practice-content', `chapter-${String(num).padStart(2, '0')}.json`), 'utf8');
+      hasPractice = true;
+    } catch {}
     chapters.push({
       num,
       slug: String(num).padStart(2, '0'),
       title,
       tag,
       hasDrill: Boolean(meta),
+      hasPractice,
       project: meta?.project ?? null,
       concept: meta?.concept ?? null,
       grader: meta?.grader ?? null,

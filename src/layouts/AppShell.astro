@@ -20,7 +20,7 @@ interface Props {
   /** active chapter number, or null on the landing page */
   current?: number | null;
   /** which view this page is, for the toggle + crumb */
-  view?: 'notes' | 'code' | null;
+  view?: 'notes' | 'practice' | 'code' | null;
   title: string;
   description: string;
 }
@@ -89,11 +89,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           )}
           <div class="top-spacer"></div>
           {chapter && chapter.hasDrill && view && (
-            <nav class="seg" data-view={view} aria-label="View">
+            <nav class="seg" data-view={view} data-segments={chapter.hasPractice ? '3' : '2'} aria-label="View">
               <div class="thumb"></div>
               <a href={`/chapters/${chapter.slug}/`} class={view === 'notes' ? 'on' : ''} aria-current={view === 'notes' ? 'page' : undefined}>
                 <Icon name="book" /> Notes
               </a>
+              {chapter.hasPractice && (
+                <a href={`/chapters/${chapter.slug}/practice/`} class={view === 'practice' ? 'on' : ''} aria-current={view === 'practice' ? 'page' : undefined}>
+                  <Icon name="target" /> Practice
+                </a>
+              )}
               <a href={`/chapters/${chapter.slug}/exercise/`} class={view === 'code' ? 'on' : ''} aria-current={view === 'code' ? 'page' : undefined}>
                 <Icon name="code" /> Code
               </a>
