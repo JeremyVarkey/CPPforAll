@@ -115,8 +115,11 @@ whole loop (came back · practiced · succeeded), not vanity pageviews.
 
 ## Next phase — decision
 
-> **Status: OPEN.** Candidate: R1 + R2 together (retention foundation + the
-> practice engine proof). Decide scope here, then execute.
+> **R1 + R2: SHIPPED 2026-06-11.** Local-first progress (read/lab/practice marks,
+> rail indicators, streaks, welcome-back resume + 29-cell map) and 61 validated
+> practice drills across chapters 1–12 (predict/fix/write, judge practice mode,
+> Notes/Practice/Code toggle). Next candidate: **R3** (AI tutor on failures +
+> sanitizer diagnosis) or **R6** (drills ch 13–28). Decide here, then execute.
 
 ## Decision log
 - **2026-06-10** — Roadmap created. Server-judge architecture (the "LeetCode

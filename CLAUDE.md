@@ -18,7 +18,13 @@ genuinely useful to anyone. Core values, in order: **free, structured, accessibl
 **SHIPPED and live at https://cppforall.com:** 29 authored chapters (lecture-grade,
 validated) · 28 labs with in-browser editor + Run/Submit against the server judge
 (red→green grading, ~1.4s warm) · instant chapter navigation · scrollspy TOC ·
-solution panes gated behind "Reveal solution" ("try first" policy).
+solution panes gated behind "Reveal solution" ("try first" policy) · **R1**
+local-first progress (src/lib/progress.ts schema v1; rail indicators, streaks,
+welcome-back resume — no accounts) · **R2** practice micro-drills ch 1–12
+(61 drills, predict/fix/write, /chapters/NN/practice/, judge practice mode —
+harness+solution server-side only; spec: docs/r1-r2-spec.md). NOTE: islands
+inside the app shell must use client:idle or client:only — client:visible never
+fires (astro-island is display:contents → zero-size box).
 
 **Next:** see `docs/roadmap.md` (positioning, four pillars, R1–R7 phases; next-phase
 decision currently OPEN). Engineering record of the runner architecture decision:
