@@ -6,6 +6,7 @@
 import { buildChaptersIndex } from './build-chapters-index.mjs';
 import { buildNotes } from './build-notes.mjs';
 import { buildDrills } from './build-drills.mjs';
+import { buildPractice } from './build-practice.mjs';
 import { validateContent } from './validate-content.mjs';
 
 const t0 = Date.now();
@@ -15,6 +16,8 @@ const notes = await buildNotes();
 console.log(`[content] notes: ${notes.length} chapters, ${notes.reduce((s, n) => s + n.lessons, 0)} lessons`);
 const drills = await buildDrills();
 console.log(`[content] drills: ${drills.length} exercises`);
+const practice = await buildPractice();
+console.log(`[content] practice: ${practice.chapters.length} chapters, ${practice.total} drills`);
 const errs = await validateContent();
 if (errs.length) {
   console.error(`[content] ✗ validation: ${errs.length} problem(s)`);

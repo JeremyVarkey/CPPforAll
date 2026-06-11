@@ -1,0 +1,60 @@
+{
+  "chapter": 9,
+  "drills": [
+    {
+      "id": "c09-d1",
+      "lesson": "93--common-semantic-errors-in-c",
+      "tier": "predict",
+      "title": "What does integer division produce here?",
+      "promptMd": "The variable `rate` is declared as `double`. What does the program print?",
+      "code": "#include <iostream>\n\nint main()\n{\n    int passed = 7;\n    int total  = 10;\n\n    double rate = passed / total;\n\n    std::cout << rate << '\\n';\n    return 0;\n}",
+      "choices": ["0", "0.7", "0.700000", "compile error"],
+      "answer": 0,
+      "explanationMd": "The division `passed / total` uses two `int` operands, so C++ performs integer division and discards the remainder — producing `0` before anything is converted to `double`. Assigning that `0` to `rate` gives `0.0`. The type of the *variable* does not change what arithmetic the division performs; the cast must happen *before* the division: `static_cast<double>(passed) / total`."
+    },
+    {
+      "id": "c09-d2",
+      "lesson": "93--common-semantic-errors-in-c",
+      "tier": "predict",
+      "title": "Assignment inside an if condition",
+      "promptMd": "What does this program print? Look carefully at the operator inside the `if`.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int x { 0 };\n\n    if (x = 5)\n        std::cout << \"branch taken, x = \" << x << '\\n';\n    else\n        std::cout << \"branch skipped, x = \" << x << '\\n';\n\n    return 0;\n}",
+      "choices": ["branch taken, x = 5", "branch skipped, x = 0", "branch taken, x = 0", "compile error"],
+      "answer": 0,
+      "explanationMd": "`x = 5` is an *assignment*, not a comparison. It stores `5` in `x` and then the assignment expression itself evaluates to `5`. Because `5` is nonzero, the `if` condition is `true` and the first branch runs with `x` now equal to `5`. Most compilers warn about this with `-Wparentheses` — a warning worth heeding."
+    },
+    {
+      "id": "c09-d3",
+      "lesson": "95--stdcin-and-handling-invalid-input",
+      "tier": "fix",
+      "title": "Fix the cin recovery order",
+      "promptMd": "The function reads one `int` from `std::cin` and should return the value on success or `-1` on failure. The snapshot and `clear()` are in the wrong order — fix it.",
+      "code": "#include <iostream>\n#include <limits>\n\n// tryReadInt() extracts one int from std::cin, then recovers the stream.\n// Contract: return the extracted value when extraction succeeded, -1 otherwise.\n// Rule from 9.5: snapshot -> clear -> ignore -> decide.\nint tryReadInt()\n{\n    int value {};\n    std::cin >> value;\n\n    std::cin.clear();  // BUG: resetting the state before reading it\n    bool ok = static_cast<bool>(std::cin);\n    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    return ok ? value : -1;\n}",
+      "harness": "#include <iostream>\n#include <cstdlib>\n#include <cstdio>\n\n// Forward declaration\nint tryReadInt();\n\nstatic int fails = 0;\n#define CHECK(cond) do { \\\n    if (!(cond)) { \\\n        std::cerr << \"FAIL: \" #cond \" @ line \" << __LINE__ << \"\\n\"; \\\n        ++fails; \\\n    } \\\n} while (0)\n\nint main()\n{\n    // Write three test lines to a temp file and redirect stdin to it.\n    // Line 1: \"42\"    — numeric, extraction should succeed.\n    // Line 2: \"abc\"   — non-numeric, extraction should fail.\n    // Line 3: \"7xyz\"  — numeric prefix only, extraction succeeds for 7.\n    const char* tmpPath = \"/tmp/c09d3_input.txt\";\n    FILE* f = std::fopen(tmpPath, \"w\");\n    if (!f) { std::cerr << \"could not write temp file\\n\"; return 2; }\n    std::fputs(\"42\\nabc\\n7xyz\\n\", f);\n    std::fclose(f);\n\n    if (!freopen(tmpPath, \"r\", stdin)) {\n        std::cerr << \"could not redirect stdin\\n\";\n        return 2;\n    }\n\n    // Case 1: numeric input -> should return 42\n    int r1 = tryReadInt();\n    CHECK(r1 == 42);\n\n    // Case 2: non-numeric input -> should return -1\n    int r2 = tryReadInt();\n    CHECK(r2 == -1);\n\n    // Case 3: numeric with trailing junk -> should return 7\n    int r3 = tryReadInt();\n    CHECK(r3 == 7);\n\n    std::remove(tmpPath);\n\n    if (!fails)\n        std::cout << \"PASS: all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <iostream>\n#include <limits>\n\n// tryReadInt() extracts one int from std::cin, then recovers the stream.\n// Contract: return the extracted value when extraction succeeded, -1 otherwise.\nint tryReadInt()\n{\n    int value {};\n    std::cin >> value;\n\n    bool ok = static_cast<bool>(std::cin);  // 1. snapshot BEFORE clear\n    std::cin.clear();                       // 2. reset any failure state\n    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n'); // 3. drain line\n    return ok ? value : -1;                 // 4. decide\n}",
+      "explanationMd": "The chapter's rule is **snapshot → clear → ignore → decide**. Calling `clear()` first resets the stream's fail bit before you read it, so `static_cast<bool>(std::cin)` is always `true` after the reset — the failure information is already gone. Moving the snapshot to before `clear()` records the real extraction outcome, and `clear()` plus `ignore()` then clean up the stream for the next read."
+    },
+    {
+      "id": "c09-d4",
+      "lesson": "96--assert-and-static_assert",
+      "tier": "fix",
+      "title": "Fix clampToRange: in-range values return wrong result",
+      "promptMd": "The function compiles and handles out-of-range inputs correctly, but returns the wrong value when the input is already inside `[lo, hi]`. Fix it.",
+      "code": "#include <cassert>\n\n// Returns value clamped to [lo, hi] (both inclusive).\n// Precondition: lo <= hi (guarded by assert).\nint clampToRange(int value, int lo, int hi)\n{\n    assert(lo <= hi && \"lo must be <= hi\");\n\n    if (value < lo)\n        return lo;\n    if (value > hi)\n        return hi;\n    return lo; // something is wrong here — the in-range case is not handled correctly\n}",
+      "harness": "#include <iostream>\n#include <cstdlib>\n\n// Forward declaration\nint clampToRange(int value, int lo, int hi);\n\nstatic int fails = 0;\n#define CHECK(cond) do { \\\n    if (!(cond)) { \\\n        std::cerr << \"FAIL: \" #cond \" @ line \" << __LINE__ << \"\\n\"; \\\n        ++fails; \\\n    } \\\n} while (0)\n\nint main()\n{\n    // Below range: clamp to lo\n    CHECK(clampToRange(-5, 0, 100) == 0);\n    // Above range: clamp to hi\n    CHECK(clampToRange(150, 0, 100) == 100);\n    // Exactly lo: should return lo\n    CHECK(clampToRange(0, 0, 100) == 0);\n    // In-range: should return value unchanged\n    CHECK(clampToRange(42, 0, 100) == 42);\n    // Exactly hi: should return hi\n    CHECK(clampToRange(100, 0, 100) == 100);\n    // Narrow range\n    CHECK(clampToRange(5, 5, 5) == 5);\n\n    if (!fails)\n        std::cout << \"PASS: all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <cassert>\n\n// Returns value clamped to [lo, hi] (both inclusive).\n// Precondition: lo <= hi (guarded by assert).\nint clampToRange(int value, int lo, int hi)\n{\n    assert(lo <= hi && \"lo must be <= hi\");\n\n    if (value < lo)\n        return lo;\n    if (value > hi)\n        return hi;\n    return value;\n}",
+      "explanationMd": "When `value` falls inside `[lo, hi]` — neither less than `lo` nor greater than `hi` — the function should return `value` unchanged. Returning `lo` instead collapses every in-range input to the lower bound. The `assert` on the precondition is correct and stays; only the final `return` needed to change."
+    },
+    {
+      "id": "c09-d5",
+      "lesson": "94--detecting-and-handling-errors",
+      "tier": "write",
+      "title": "Write isValidQuantity",
+      "promptMd": "Implement the function so all tests pass. Valid quantities are integers in the inclusive range `[1, 999]`.",
+      "code": "// Returns true if qty is a valid order quantity: must be in the range [1, 999]\n// (both ends inclusive). Returns false for 0, negatives, and values >= 1000.\nbool isValidQuantity(int qty)\n{\n    (void)qty; // remove this line when you implement the function\n    // >>> YOUR CODE HERE <<<\n    return false;\n}",
+      "harness": "#include <iostream>\n#include <cstdlib>\n\n// Forward declaration\nbool isValidQuantity(int qty);\n\nstatic int fails = 0;\n#define CHECK(cond) do { \\\n    if (!(cond)) { \\\n        std::cerr << \"FAIL: \" #cond \" @ line \" << __LINE__ << \"\\n\"; \\\n        ++fails; \\\n    } \\\n} while (0)\n\nint main()\n{\n    // Valid: boundary values and mid-range\n    CHECK(isValidQuantity(1)   == true);\n    CHECK(isValidQuantity(500) == true);\n    CHECK(isValidQuantity(999) == true);\n\n    // Invalid: zero and negatives\n    CHECK(isValidQuantity(0)   == false);\n    CHECK(isValidQuantity(-1)  == false);\n    CHECK(isValidQuantity(-99) == false);\n\n    // Invalid: just above the maximum and well above\n    CHECK(isValidQuantity(1000) == false);\n    CHECK(isValidQuantity(9999) == false);\n\n    if (!fails)\n        std::cout << \"PASS: all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Returns true if qty is a valid order quantity: must be in the range [1, 999]\n// (both ends inclusive). Returns false for 0, negatives, and values >= 1000.\nbool isValidQuantity(int qty)\n{\n    return qty >= 1 && qty <= 999;\n}",
+      "explanationMd": "A value is valid when it satisfies *both* `qty >= 1` (excludes zero and negatives) *and* `qty <= 999` (excludes 1000 and above). The `&&` of the two boundary checks is the whole implementation. The boundary tests — values `1`, `999`, `0`, and `1000` — are where off-by-one bugs hide: `>` instead of `>=`, or `<` instead of `<=`, would pass the midpoint test but fail exactly at the edges."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "chapter": 5,
+  "drills": [
+    {
+      "id": "c05-d1",
+      "lesson": "53--numeral-systems-decimal-binary-hexadecimal-and-octal",
+      "tier": "predict",
+      "title": "Sticky hex manipulator",
+      "promptMd": "Both `a` and `b` are ordinary ints. What does this program print?",
+      "code": "#include <iostream>\n\nint main()\n{\n    int a { 255 };\n    int b { 16 };\n\n    std::cout << std::hex << a << '\\n';\n    std::cout << b << '\\n';\n\n    return 0;\n}",
+      "choices": ["ff\n10", "ff\n16", "255\n16", "255\n10"],
+      "answer": 0,
+      "explanationMd": "`std::hex` is a *sticky* manipulator: once streamed into `std::cout`, every subsequent integer prints in hexadecimal until you explicitly switch back with `std::dec`. So both `a` (255 → `ff`) and `b` (16 → `10`) are printed in hex. The common mistake is assuming each output statement resets to decimal on its own — it does not."
+    },
+    {
+      "id": "c05-d2",
+      "lesson": "56--constexpr-variables",
+      "tier": "predict",
+      "title": "constexpr with a non-constexpr function",
+      "promptMd": "What happens when you compile this program?",
+      "code": "#include <iostream>\n\nint getMax() { return 100; }\n\nint main()\n{\n    constexpr int limit { getMax() };\n    std::cout << limit << '\\n';\n    return 0;\n}",
+      "choices": ["100", "0", "undefined behavior", "compile error"],
+      "answer": 3,
+      "explanationMd": "`constexpr` requires its initializer to be a *constant expression* — something the compiler can fully evaluate during compilation. `getMax()` is a plain (non-`constexpr`) function, so its return value is only known at runtime. The compiler rejects the initializer with an error. If you want `limit` to be a compile-time constant, you would mark `getMax()` as `constexpr` — or just write the literal directly."
+    },
+    {
+      "id": "c05-d3",
+      "lesson": "57--introduction-to-stdstring",
+      "tier": "fix",
+      "title": "Fix the name-builder",
+      "promptMd": "The function is supposed to return `\"First Last\"` but produces only the last name. Find and fix the single-character mistake.",
+      "code": "#include <string>\n#include <string_view>\n\n// Returns \"First Last\" as an owning std::string.\nstd::string buildFull(std::string_view first, std::string_view last)\n{\n    std::string result { first };\n    result += \" \";\n    result = last;   // BUG: should be +=\n    return result;\n}\n\n// Returns the total character count of first + last (no space).\nint combinedLength(std::string_view first, std::string_view last)\n{\n    return static_cast<int>(first.length() + last.length());\n}",
+      "harness": "#include <iostream>\n#include <string>\n#include <string_view>\n\nstd::string buildFull(std::string_view first, std::string_view last);\nint combinedLength(std::string_view first, std::string_view last);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(buildFull(\"Ada\", \"Lovelace\") == \"Ada Lovelace\");\n    CHECK(buildFull(\"Grace\", \"Hopper\") == \"Grace Hopper\");\n    CHECK(buildFull(\"\", \"Smith\") == \" Smith\");\n\n    CHECK(combinedLength(\"Ada\", \"Lovelace\") == 11);\n    CHECK(combinedLength(\"Al\", \"Go\") == 4);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <string>\n#include <string_view>\n\nstd::string buildFull(std::string_view first, std::string_view last)\n{\n    std::string result { first };\n    result += \" \";\n    result += last;   // FIXED: += appends, = replaces\n    return result;\n}\n\nint combinedLength(std::string_view first, std::string_view last)\n{\n    return static_cast<int>(first.length() + last.length());\n}",
+      "explanationMd": "`result = last` *replaces* the entire string with the last name, discarding the first name and space that were built up before it. The fix is `result += last`, which *appends* to what is already in `result`. This is a one-character difference (`=` vs `+=`) that completely changes meaning — a classic source of subtle build-string bugs."
+    },
+    {
+      "id": "c05-d4",
+      "lesson": "53--numeral-systems-decimal-binary-hexadecimal-and-octal",
+      "tier": "fix",
+      "title": "Octal literal masquerading as decimal",
+      "promptMd": "The function is supposed to classify codes below 100 as `\"small\"` and codes 100 or above as `\"large\"`, but the threshold is wrong. Find the bug.",
+      "code": "#include <string_view>\n\n// Returns \"large\" if code >= 100, \"small\" otherwise.\nstd::string_view classify(int code)\n{\n    constexpr int kThreshold { 0100 };  // BUG: octal literal\n    if (code >= kThreshold)\n        return \"large\";\n    return \"small\";\n}",
+      "harness": "#include <iostream>\n#include <string_view>\n\nstd::string_view classify(int code);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(classify(99)  == \"small\");\n    CHECK(classify(100) == \"large\");\n    CHECK(classify(200) == \"large\");\n    CHECK(classify(63)  == \"small\");\n    CHECK(classify(64)  == \"small\");  // 64 is below the intended threshold of 100\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <string_view>\n\nstd::string_view classify(int code)\n{\n    constexpr int kThreshold { 100 };  // FIXED: decimal 100, not octal 0100\n    if (code >= kThreshold)\n        return \"large\";\n    return \"small\";\n}",
+      "explanationMd": "A leading `0` makes an integer literal *octal*. `0100` is octal 100, which equals decimal 64 — not the intended 100. So the threshold was 64, causing codes like 64–99 to be misclassified as `\"large\"`. The fix is simply `100` without the leading zero. This is why the chapter warns to avoid accidental leading zeros: `012` is not twelve, `0100` is not one hundred."
+    },
+    {
+      "id": "c05-d5",
+      "lesson": "58--introduction-to-stdstring_view",
+      "tier": "write",
+      "title": "Build a badge label with constexpr and string_view",
+      "promptMd": "Implement `badgeLabel` and `badgeLabelLength` using the provided `constexpr` prefix constant and `std::string_view` parameters.",
+      "code": "#include <string>\n#include <string_view>\n\nconstexpr std::string_view kPrefix { \"[BADGE] \" };\n\n// Returns \"[BADGE] \" + name as an owning std::string.\nstd::string badgeLabel(std::string_view name)\n{\n    // >>> YOUR CODE HERE <<<\n    return {};\n}\n\n// Returns the total character count of the full badge label for name.\n// Hint: kPrefix.length() + name.length(), cast to int.\nint badgeLabelLength(std::string_view name)\n{\n    // >>> YOUR CODE HERE <<<\n    return 0;\n}",
+      "harness": "#include <iostream>\n#include <string>\n#include <string_view>\n\nstd::string badgeLabel(std::string_view name);\nint badgeLabelLength(std::string_view name);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(badgeLabel(\"Ada\")    == \"[BADGE] Ada\");\n    CHECK(badgeLabel(\"Grace\")  == \"[BADGE] Grace\");\n    CHECK(badgeLabel(\"\")       == \"[BADGE] \");\n\n    CHECK(badgeLabelLength(\"Ada\")   == 11);   // 8 + 3\n    CHECK(badgeLabelLength(\"Grace\") == 13);   // 8 + 5\n    CHECK(badgeLabelLength(\"\")      == 8);    // 8 + 0\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <string>\n#include <string_view>\n\nconstexpr std::string_view kPrefix { \"[BADGE] \" };\n\nstd::string badgeLabel(std::string_view name)\n{\n    std::string result { kPrefix };\n    result += name;\n    return result;\n}\n\nint badgeLabelLength(std::string_view name)\n{\n    return static_cast<int>(kPrefix.length() + name.length());\n}",
+      "explanationMd": "`constexpr std::string_view` is the idiomatic compile-time string constant: `constexpr` guarantees the value is known at compile time, and `string_view` owns nothing so there is no runtime allocation. To build the result you seed an owning `std::string` from the view (`std::string result { kPrefix }`) and append with `+=`. `.length()` returns an unsigned `size_t`, so the cast `static_cast<int>(...)` makes the arithmetic signed and warning-free."
+    }
+  ]
+}

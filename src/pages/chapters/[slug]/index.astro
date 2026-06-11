@@ -2,6 +2,7 @@
 /** Chapter notes page — the "book" view. Static HTML; lesson anchors are
  *  preserved from the source notes' own TOC slugs. */
 import AppShell from '../../../layouts/AppShell.astro';
+import ProgressBridge from '../../../components/ProgressBridge.astro';
 import chapters from '../../../generated/chapters.json';
 
 export function getStaticPaths() {
@@ -20,7 +21,14 @@ const lessonWord = notes.lessons.length === 1 ? 'lesson' : 'lessons';
   title={`Chapter ${chapter.num} — ${chapter.title} · CPPforAll`}
   description={`Chapter ${chapter.num} of CPPforAll's free C++ course: ${chapter.title}. ${notes.lessons.length} ${lessonWord}, with a hands-on lab.`}
 >
-  <div class="reader-wrap">
+  <ProgressBridge />
+  <div
+    class="reader-wrap"
+    data-track-read
+    data-chapter-slug={chapter.slug}
+    data-chapter-title={chapter.title}
+    data-chapter-path={`/chapters/${chapter.slug}/`}
+  >
   <article class="reader swap">
     <div class="ch-kicker">Chapter {chapter.num} · {chapter.tag}</div>
     <h1 class="ch-display">{chapter.title}</h1>

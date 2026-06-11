@@ -1,0 +1,107 @@
+---
+/**
+ * ProgressMap — the compact 29-cell progress strip for the landing
+ * "welcome back" block (one tiny square per chapter).
+ *
+ *  States (filled client-side; pages are static so the server renders empty
+ *  cells and a tiny inline script paints them from window.cppProgress):
+ *    - green  → lab done for that chapter
+ *    - outline → read but no green
+ *    - empty  → untouched
+ *
+ *  Each cell is a link to the chapter, with a `title` (sans, hover) naming it.
+ *  Styles are scoped here and use only design tokens.
+ */
+import chapters from '../generated/chapters.json';
+
+interface Chapter {
+  num: number;
+  slug: string;
+  title: string;
+}
+const cells = (chapters as Chapter[]).map((c) => ({
+  num: c.num,
+  slug: c.slug,
+  title: c.title,
+}));
+---
+
+<div class="pmap" role="group" aria-label="Your progress across all chapters">
+  {cells.map((c) => (
+    <a
+      class="pmap-cell"
+      href={`/chapters/${c.slug}/`}
+      data-pmap-cell
+      data-slug={c.slug}
+      title={`Chapter ${c.num} — ${c.title}`}
+      aria-label={`Chapter ${c.num}: ${c.title}`}
+    ></a>
+  ))}
+</div>
+
+<script is:inline>
+  (function () {
+    function paint() {
+      var api = window.cppProgress;
+      var cells = document.querySelectorAll('[data-pmap-cell]');
+      cells.forEach(function (cell) {
+        var slug = cell.getAttribute('data-slug');
+        var st = null;
+        try {
+          st = api && api.chapterState ? api.chapterState(slug) : null;
+        } catch (e) {
+          st = null;
+        }
+        cell.classList.remove('is-lab', 'is-read');
+        if (st && st.lab) cell.classList.add('is-lab');
+        else if (st && st.read) cell.classList.add('is-read');
+      });
+    }
+    // Paint on load, on soft nav, and whenever progress changes this session.
+    if (!window.__cppPmapWired) {
+      window.__cppPmapWired = true;
+      document.addEventListener('astro:page-load', paint);
+      document.addEventListener('cppforall:progress', paint);
+      window.addEventListener('cppforall:lab-green', paint);
+    }
+    paint();
+  })();
+</script>
+
+<style>
+  .pmap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-width: 340px;
+  }
+  .pmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    box-sizing: border-box;
+    transition: background 0.14s var(--ease), border-color 0.14s var(--ease), transform 0.08s var(--ease);
+    text-decoration: none;
+    display: block;
+  }
+  .pmap-cell:hover {
+    transform: scale(1.18);
+    border-color: var(--muted);
+  }
+  .pmap-cell:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-tint);
+  }
+  /* read but no green: a quiet outline (slightly stronger than untouched) */
+  .pmap-cell.is-read {
+    border-color: var(--muted);
+    background: var(--subtle);
+  }
+  /* lab green: filled success square */
+  .pmap-cell.is-lab {
+    background: var(--success);
+    border-color: var(--success);
+  }
+</style>

@@ -1,0 +1,148 @@
+---
+/**
+ * Practice page — the third view: lesson-grouped micro-drill cards (predict /
+ * fix / write), one PracticeDrill island per drill (client:visible, lazy).
+ *
+ * getStaticPaths emits a route ONLY for chapters that have a generated practice
+ * JSON (src/generated/practice/chapter-NN.json). Authoring agents run
+ * concurrently, so this set may be partial during a build — that's fine, the
+ * page simply doesn't exist for un-authored chapters yet.
+ *
+ * The `view="practice"` prop is passed even though the AppShell toggle doesn't
+ * know that segment yet — the orchestrator wires the 3-segment toggle. The
+ * generated JSON is already CLIENT-SAFE (build-practice.mjs strips harness +
+ * solution); nothing on this page or its island props carries those bytes.
+ */
+import AppShell from '../../../../layouts/AppShell.astro';
+import Icon from '../../../../components/Icon.astro';
+import chapters from '../../../../generated/chapters.json';
+import PracticeDrill from '../../../../islands/PracticeDrill';
+
+// All generated practice files, eagerly imported so getStaticPaths can enumerate
+// them and each page can pull its own drills.
+const practiceModules = import.meta.glob('../../../../generated/practice/chapter-*.json', { eager: true });
+
+type ClientDrill = {
+  id: string;
+  lesson: string;
+  tier: 'predict' | 'fix' | 'write';
+  title: string;
+  promptMd: string;
+  code: string;
+  choices?: string[];
+  answer?: number;
+  explanationMd?: string;
+};
+type PracticeFile = { chapter: number; drills: ClientDrill[] };
+
+function fileForSlug(slug: string): PracticeFile | null {
+  const key = Object.keys(practiceModules).find((k) => k.endsWith(`chapter-${slug}.json`));
+  if (!key) return null;
+  return (practiceModules[key] as { default: PracticeFile }).default;
+}
+
+export function getStaticPaths() {
+  const mods = import.meta.glob('../../../../generated/practice/chapter-*.json', { eager: true });
+  const slugs = Object.keys(mods)
+    .map((k) => k.match(/chapter-(\d{2})\.json$/)?.[1])
+    .filter((s): s is string => Boolean(s));
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const chapter = chapters.find((c) => c.slug === slug)!;
+const practice = fileForSlug(slug!)!;
+
+// Resolve lesson anchors → titles from the chapter's notes (for group headers
+// linked to the notes page). Built at build time; safe to read here.
+const notes = (await import(`../../../../generated/notes/chapter-${slug}.json`)).default as {
+  lessons: { anchor: string; title: string }[];
+};
+const lessonTitle = new Map(notes.lessons.map((l) => [l.anchor, l.title]));
+
+// Group drills by lesson anchor, preserving first-seen order.
+type Group = { anchor: string; title: string; drills: ClientDrill[] };
+const groups: Group[] = [];
+const groupIndex = new Map<string, number>();
+for (const d of practice.drills) {
+  const anchor = d.lesson || '';
+  if (!groupIndex.has(anchor)) {
+    groupIndex.set(anchor, groups.length);
+    groups.push({
+      anchor,
+      title: anchor ? (lessonTitle.get(anchor) ?? anchor) : 'Chapter practice',
+      drills: [],
+    });
+  }
+  groups[groupIndex.get(anchor)!].drills.push(d);
+}
+
+const tierLabel = (t: string) => t; // predict | fix | write (kindtag visual idiom)
+---
+
+<AppShell
+  current={chapter.num}
+  view={'practice' as any}
+  title={`Practice — Chapter ${chapter.num} (${chapter.title}) · CPPforAll`}
+  description={`Quick C++ micro-drills for chapter ${chapter.num} (${chapter.title}): predict the output, fix the bug, write the function. Instant feedback in the browser.`}
+>
+  <div class="practice">
+    <div class="pr-head">
+      <div class="pr-kicker">Practice · Chapter {chapter.num}</div>
+      <h1>{chapter.title}</h1>
+      <p class="pr-sub">
+        Short drills to make the concepts stick — predict what code prints, fix a broken
+        snippet, or write a small function. Commit to an answer before you run anything.
+      </p>
+    </div>
+
+    {groups.map((g) => (
+      <section class="pr-group" aria-labelledby={`grp-${g.anchor || 'general'}`}>
+        <h2 class="pr-group-head" id={`grp-${g.anchor || 'general'}`}>
+          {g.anchor
+            ? <a href={`/chapters/${slug}/#${g.anchor}`}>{g.title}<Icon name="link" /></a>
+            : <span>{g.title}</span>}
+        </h2>
+        <div class="pr-cards">
+          {g.drills.map((d) => (
+            <PracticeDrill client:visible chapter={chapter.num} drill={d} />
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</AppShell>
+
+<style>
+  .practice { max-width: 820px; }
+  .pr-head { margin-bottom: 8px; }
+  .pr-kicker {
+    font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent-press); margin-bottom: 6px;
+  }
+  :global([data-theme="dark"]) .pr-kicker { color: var(--accent); }
+  .pr-head h1 {
+    font-family: var(--sans); font-size: 30px; font-weight: 680; letter-spacing: -.02em;
+    color: var(--ink); margin: 0 0 8px;
+  }
+  .pr-sub {
+    font-family: var(--serif); font-size: 16px; line-height: 1.6; color: var(--ink2);
+    margin: 0; max-width: 64ch;
+  }
+
+  .pr-group { margin-top: 34px; }
+  .pr-group-head {
+    font-family: var(--sans); font-size: 14px; font-weight: 650; letter-spacing: .01em;
+    color: var(--ink2); margin: 0 0 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .pr-group-head a {
+    color: var(--ink2); text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: color .15s;
+  }
+  .pr-group-head a:hover { color: var(--accent-press); }
+  :global([data-theme="dark"]) .pr-group-head a:hover { color: var(--accent); }
+  .pr-group-head a :global(svg) { width: 13px; height: 13px; opacity: .55; }
+
+  .pr-cards { display: flex; flex-direction: column; gap: 16px; }
+</style>

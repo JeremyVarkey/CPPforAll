@@ -1,0 +1,60 @@
+{
+  "chapter": 4,
+  "drills": [
+    {
+      "id": "c04-d1",
+      "lesson": "43--object-sizes-and-the-sizeof-operator",
+      "tier": "predict",
+      "title": "Does sizeof increment x?",
+      "promptMd": "Predict what the two lines print. Think about whether `sizeof` actually runs the expression inside it.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int x { 1 };\n    std::cout << sizeof(x++) << '\\n';\n    std::cout << x << '\\n';\n    return 0;\n}",
+      "choices": ["4\n2", "4\n1", "1\n1", "compile error"],
+      "answer": 1,
+      "explanationMd": "`sizeof` only needs to determine the *type* of its operand — it never evaluates the expression. Because the expression is left unevaluated, the side effect `x++` never happens. The first line prints the size of `int` (typically `4`), and `x` stays `1`."
+    },
+    {
+      "id": "c04-d2",
+      "lesson": "45--unsigned-integers-and-why-to-avoid-them",
+      "tier": "predict",
+      "title": "Is -1 less than 1u?",
+      "promptMd": "What does this program print? Think about how C++ finds a common type for the comparison.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int s { -1 };\n    unsigned int u { 1 };\n\n    if (s < u)\n    {\n        std::cout << \"less\\n\";\n    }\n    else\n    {\n        std::cout << \"not less\\n\";\n    }\n    return 0;\n}",
+      "choices": ["less", "not less", "undefined behavior", "compile error"],
+      "answer": 1,
+      "explanationMd": "When a signed `int` and an `unsigned int` are compared, C++ converts the signed value to `unsigned` to find a common type. `-1` converted to `unsigned int` becomes `4294967295` (on a 32-bit system), which is *not* less than `1`. The usual compiler warning (`-Wsign-compare`) is the hint this is happening — heed it."
+    },
+    {
+      "id": "c04-d3",
+      "lesson": "44--signed-integers",
+      "tier": "fix",
+      "title": "Fix the integer-division average",
+      "promptMd": "The function returns the wrong result for non-divisible inputs. Fix it so the average is computed as a true floating-point quotient.",
+      "code": "double computeAverage(int total, int count) {\n    return total / count;  // BUG: integer division truncates before widening\n}",
+      "harness": "#include <iostream>\n#include <cmath>\n\ndouble computeAverage(int total, int count);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nint main() {\n    CHECK(std::abs(computeAverage(7, 2)  - 3.5)         < 1e-9);\n    CHECK(std::abs(computeAverage(10, 3) - 3.333333333) < 1e-6);\n    CHECK(std::abs(computeAverage(1, 4)  - 0.25)        < 1e-9);\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "double computeAverage(int total, int count) {\n    return static_cast<double>(total) / count;\n}",
+      "explanationMd": "Both operands are `int`, so `total / count` performs *integer* division — the fractional part is discarded before the result is widened to `double`. The fix casts the dividend to `double` *before* the division: `static_cast<double>(total) / count` makes the entire operation floating-point from the start, preserving the fractional part."
+    },
+    {
+      "id": "c04-d4",
+      "lesson": "412--introduction-to-type-conversion-and-static_cast",
+      "tier": "write",
+      "title": "Guard before casting to size_t",
+      "promptMd": "Implement `isValidIndex` using `if` statements. Check that `index` is nonnegative first — only then is it safe to cast it to `std::size_t` for the upper-bound comparison.",
+      "code": "#include <cstddef>\n\n// isValidIndex: return true only when index is a valid position\n// in a sequence of 'length' elements.\n//\n// Rules:\n//   1. A negative index is NEVER valid.\n//   2. An index equal to or beyond 'length' is out of bounds.\n//\n// WARNING: do NOT cast index to std::size_t before confirming it is >= 0.\n// Casting a negative int to std::size_t wraps it to a huge value and\n// bypasses the upper-bound check entirely -- the sign check must come first.\nbool isValidIndex(int index, std::size_t length) {\n    (void)index; (void)length;\n    // >>> YOUR CODE HERE <<<\n    // Hint: use a first if-statement to reject any negative index,\n    // then a second check against length after the cast is safe.\n    return false;\n}",
+      "harness": "#include <iostream>\n#include <cstddef>\n\nbool isValidIndex(int index, std::size_t length);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nint main() {\n    CHECK(isValidIndex(0, 5)  == true);\n    CHECK(isValidIndex(4, 5)  == true);\n    CHECK(isValidIndex(5, 5)  == false);  // equal to length: out of bounds\n    CHECK(isValidIndex(-1, 5) == false);  // negative must be caught BEFORE cast\n    CHECK(isValidIndex(-1, 0) == false);  // edge: empty sequence\n    CHECK(isValidIndex(0, 0)  == false);  // nothing to index into\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <cstddef>\n\nbool isValidIndex(int index, std::size_t length) {\n    if (index < 0)\n    {\n        return false;\n    }\n    if (static_cast<std::size_t>(index) < length)\n    {\n        return true;\n    }\n    return false;\n}",
+      "explanationMd": "The sign check `if (index < 0) return false;` must come first. Only after confirming the value is nonnegative is it safe to `static_cast<std::size_t>(index)` for the upper-bound comparison — casting a negative `int` to an unsigned type yields a gigantic value that sails right past any length check, silently accepting an invalid index."
+    },
+    {
+      "id": "c04-d5",
+      "lesson": "46--fixed-width-integers-and-size_t",
+      "tier": "fix",
+      "title": "Fix the unsigned wraparound in remaining()",
+      "promptMd": "The function wraps to a huge number instead of returning `0` when more items are taken than exist. Fix it so the result is clamped to zero when `taken` exceeds `total`.",
+      "code": "#include <cstddef>\n\n// remaining: return how many items are left after removing 'taken' from 'total'.\n// If taken > total, the answer is 0 -- nothing left.\n//\n// BUG: std::size_t is unsigned; when taken > total the subtraction\n// wraps around to a huge value instead of going negative.\nstd::size_t remaining(std::size_t total, std::size_t taken) {\n    return total - taken;  // BUG: wraps when taken > total\n}",
+      "harness": "#include <iostream>\n#include <cstddef>\n\nstd::size_t remaining(std::size_t total, std::size_t taken);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nint main() {\n    CHECK(remaining(10, 3)  == 7);\n    CHECK(remaining(5,  5)  == 0);   // exactly depleted\n    CHECK(remaining(0,  0)  == 0);\n    CHECK(remaining(3, 10)  == 0);   // taken > total: clamp to 0, not a wrap\n    CHECK(remaining(1,  2)  == 0);   // taken > total: clamp to 0\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <cstddef>\n\nstd::size_t remaining(std::size_t total, std::size_t taken) {\n    if (taken >= total)\n    {\n        return 0;\n    }\n    return total - taken;\n}",
+      "explanationMd": "`std::size_t` is unsigned, so it cannot represent negative numbers — when `taken` exceeds `total`, the subtraction wraps around to a very large value instead of going below zero. The fix guards with `if (taken >= total) return 0;` before performing the subtraction, ensuring the operation only runs when the result is representable."
+    }
+  ]
+}

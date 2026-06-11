@@ -1,0 +1,70 @@
+{
+  "chapter": 7,
+  "drills": [
+    {
+      "id": "c07-d1",
+      "lesson": "711--static-local-variables",
+      "tier": "predict",
+      "title": "What does this print?",
+      "promptMd": "Trace each call to `count()` carefully — decide what the static local holds before you settle on an answer.",
+      "code": "#include <iostream>\n\nvoid count()\n{\n    static int s_calls { 0 };\n    ++s_calls;\n    std::cout << s_calls << '\\n';\n}\n\nint main()\n{\n    count();\n    count();\n    count();\n    return 0;\n}",
+      "choices": [
+        "0\n1\n2",
+        "1\n2\n3",
+        "1\n1\n1",
+        "compile error"
+      ],
+      "answer": 1,
+      "explanationMd": "`s_calls` is a **static local**: it is initialized once (to `0`) on the very first call, then survives between calls instead of being destroyed when `count()` returns. Each call increments it and prints the new value, so the output climbs `1 → 2 → 3`. The common trap is expecting `1 1 1` (as if the initializer ran every time — it doesn't) or `0 1 2` (as if the value was printed before the increment rather than after)."
+    },
+    {
+      "id": "c07-d2",
+      "lesson": "75--variable-shadowing-name-hiding",
+      "tier": "predict",
+      "title": "Shadow and scope resolution",
+      "promptMd": "A local variable shares its name with a global. Trace each output statement and commit to an answer.",
+      "code": "#include <iostream>\n\nint g_score { 10 };\n\nvoid show()\n{\n    int g_score { 99 };     // shadows the global\n    std::cout << g_score << '\\n';    // (A)\n    std::cout << ::g_score << '\\n'; // (B)\n}\n\nint main()\n{\n    show();\n    return 0;\n}",
+      "choices": [
+        "10\n99",
+        "99\n99",
+        "99\n10",
+        "compile error"
+      ],
+      "answer": 2,
+      "explanationMd": "Inside `show()`, the local `g_score { 99 }` shadows the global. An unqualified `g_score` (line A) refers to the nearest enclosing declaration — the local — so it prints `99`. The leading `::` on line B explicitly requests the **global namespace**, bypassing the shadow entirely, so it prints the global value `10`. The shadow never touches the global object; they are two completely separate variables."
+    },
+    {
+      "id": "c07-d3",
+      "lesson": "711--static-local-variables",
+      "tier": "fix",
+      "title": "Off-by-one in the ID dispenser",
+      "promptMd": "This ID dispenser should hand out `0` on the first call, `1` on the second, and so on — but it hands out `1, 2, 3` instead. Fix it.",
+      "code": "// nextId() should dispense 0, 1, 2, ... (first call returns 0).\nint nextId()\n{\n    static int s_id { 0 };\n    return ++s_id;  // BUG: pre-increment returns 1 on the first call, not 0\n}",
+      "harness": "#include <iostream>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint nextId();\n\nint main()\n{\n    CHECK(nextId() == 0);\n    CHECK(nextId() == 1);\n    CHECK(nextId() == 2);\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "int nextId()\n{\n    static int s_id { 0 };\n    return s_id++;  // post-increment: return current value, then advance\n}",
+      "explanationMd": "Pre-increment (`++s_id`) increments the variable *before* returning it, so the first call yields `1` — not `0`. Post-increment (`s_id++`) returns the *current* value and then advances the stored counter, so the first call yields `0`, the second `1`, and so on. The chapter lab's `nextCounterId()` uses this same post-increment idiom to hand out IDs starting from a base value."
+    },
+    {
+      "id": "c07-d4",
+      "lesson": "75--variable-shadowing-name-hiding",
+      "tier": "fix",
+      "title": "Shadow in the branch discards the result",
+      "promptMd": "`classify()` always returns `\"unknown\"` no matter what you pass in. Find the shadow that is burying each branch's result and remove it.",
+      "code": "#include <string_view>\n\n// classify() should return \"positive\", \"negative\", or \"zero\".\nstd::string_view classify(int x)\n{\n    std::string_view label { \"unknown\" };\n\n    if (x > 0)\n    {\n        std::string_view label { \"positive\" }; // BUG: new variable, shadows outer label\n    }\n    else if (x < 0)\n    {\n        std::string_view label { \"negative\" }; // BUG: same problem\n    }\n    else\n    {\n        std::string_view label { \"zero\" };     // BUG: same problem\n    }\n\n    return label; // always \"unknown\" — the outer label was never changed\n}",
+      "harness": "#include <iostream>\n#include <string_view>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nstd::string_view classify(int x);\n\nint main()\n{\n    CHECK(classify(5)  == \"positive\");\n    CHECK(classify(-3) == \"negative\");\n    CHECK(classify(0)  == \"zero\");\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <string_view>\n\nstd::string_view classify(int x)\n{\n    std::string_view label { \"unknown\" };\n\n    if (x > 0)\n        label = \"positive\";\n    else if (x < 0)\n        label = \"negative\";\n    else\n        label = \"zero\";\n\n    return label;\n}",
+      "explanationMd": "Each `if` branch was declaring a *new* `std::string_view label` inside its own block. That inner variable shadows the outer `label`, is assigned the correct string, and then immediately destroyed when the block closes — the outer `label` is never touched and stays `\"unknown\"`. The fix is to assign to the existing outer `label` rather than declaring a fresh one in each branch."
+    },
+    {
+      "id": "c07-d5",
+      "lesson": "711--static-local-variables",
+      "tier": "write",
+      "title": "Implement a unique-event-ID dispenser",
+      "promptMd": "Write `nextEventId()` so that each call returns the next integer in sequence, starting at `100` on the first call. Use a static local variable — no global state.",
+      "code": "// nextEventId() must return a unique integer each call.\n// First call returns 100, second returns 101, and so on.\n// Use a static local variable — no global state allowed.\nint nextEventId()\n{\n    // >>> YOUR CODE HERE <<<\n    return 0;\n}",
+      "harness": "#include <iostream>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint nextEventId();\n\nint main()\n{\n    CHECK(nextEventId() == 100);\n    CHECK(nextEventId() == 101);\n    CHECK(nextEventId() == 102);\n    CHECK(nextEventId() == 103);\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "int nextEventId()\n{\n    static int s_nextId { 100 };\n    return s_nextId++;\n}",
+      "explanationMd": "Declare `static int s_nextId { 100 };` — the `static` keyword gives the local **static duration**, so `s_nextId` is initialized once (to `100`) on the very first call and persists for the program's lifetime. Use post-increment (`s_nextId++`) so the current value is returned *before* the counter advances: first call yields `100`, second `101`, and so on. A global counter would do the same job, but a static local seals the state inside the function — only `nextEventId()` can access it."
+    }
+  ]
+}

@@ -38,6 +38,15 @@ COPY judge/test-manifests.mjs ./test-manifests.mjs
 # ── Manifests → /app/manifests (MANIFESTS_DIR). ──────────────────────────────
 COPY judge/manifests ./manifests
 
+# ── Practice content → /app/practice (PRACTICE_DIR). The R2 micro-drills. Each
+# chapter-NN.json carries every drill's `harness` (test driver owning main()) and
+# `solution` (reference fix). These live SERVER-SIDE only: the server compiles
+# student.cpp + the baked harness, and NEVER serializes harness/solution into any
+# response (GET /practice/:chapter returns ids + tiers only). This is the same
+# trust model as the drills' tests/ — present on the image, never sent to clients.
+# The build context is the repo root, so the source path is src/practice-content.
+COPY src/practice-content ./practice
+
 # ── Drills content → /app/drills (DRILLS_DIR). The build context is the repo
 # root, so the source path is content/drills. We copy the WHOLE tree (so the
 # replay gate below can read each chapter's solution/), run the gate, and THEN
@@ -45,11 +54,14 @@ COPY judge/manifests ./manifests
 COPY content/drills ./drills
 
 # ── Replay gate (build-time): every manifest must go red on the pristine starter
-# and green on the solution. A bad manifest fails the IMAGE BUILD here, so a
-# learner is never served a broken grader. This runs while solution/ still exists.
+# and green on the solution; AND every fix/write practice drill must go red on its
+# authored code and green on its solution. A bad manifest OR drill fails the IMAGE
+# BUILD here, so a learner is never served a broken grader. Runs while solution/
+# still exists; the practice gate reads harness+solution from /app/practice.
 RUN DRILLS_DIR=/app/drills \
     DRILLS_WITH_SOLUTIONS_DIR=/app/drills \
     MANIFESTS_DIR=/app/manifests \
+    PRACTICE_DIR=/app/practice \
     node test-manifests.mjs
 
 # ── Strip the reference solutions from the serving image. After this, DRILLS_DIR
@@ -68,7 +80,8 @@ USER judge
 ENV NODE_ENV=production \
     PORT=8080 \
     DRILLS_DIR=/app/drills \
-    MANIFESTS_DIR=/app/manifests
+    MANIFESTS_DIR=/app/manifests \
+    PRACTICE_DIR=/app/practice
 
 EXPOSE 8080
 

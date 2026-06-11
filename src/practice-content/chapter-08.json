@@ -1,0 +1,70 @@
+{
+  "chapter": 8,
+  "drills": [
+    {
+      "id": "c08-d1",
+      "lesson": "86--switch-fallthrough-and-scoping",
+      "tier": "predict",
+      "title": "What does this switch print?",
+      "promptMd": "Trace the execution carefully — pay attention to which `break` statements are present and which are absent.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int n { 2 };\n    switch (n)\n    {\n    case 1:\n        std::cout << \"one\\n\";\n        break;\n    case 2:\n        std::cout << \"two\\n\";\n        // no break here\n    case 3:\n        std::cout << \"three\\n\";\n        break;\n    default:\n        std::cout << \"other\\n\";\n        break;\n    }\n    return 0;\n}",
+      "choices": [
+        "two",
+        "two\nthree",
+        "three",
+        "one\ntwo\nthree"
+      ],
+      "answer": 1,
+      "explanationMd": "When `n == 2`, execution jumps to `case 2` and prints `two`. There is no `break` after that case, so execution **falls through** directly into `case 3` and prints `three` as well. The `break` in `case 3` then exits the switch. Fallthrough is the default behavior in C++; only a `break`, `return`, or `[[fallthrough]]` attribute changes it."
+    },
+    {
+      "id": "c08-d2",
+      "lesson": "811--break-and-continue",
+      "tier": "predict",
+      "title": "What does this loop print?",
+      "promptMd": "Focus on what happens to the loop counter when `continue` fires inside a `for` loop.",
+      "code": "#include <iostream>\n\nint main()\n{\n    for (int i { 1 }; i <= 5; ++i)\n    {\n        if (i == 3)\n            continue;\n        std::cout << i << ' ';\n    }\n    std::cout << '\\n';\n    return 0;\n}",
+      "choices": [
+        "1 2 4 5",
+        "1 2",
+        "1 2 3 4 5",
+        "infinite loop"
+      ],
+      "answer": 0,
+      "explanationMd": "In a `for` loop, `continue` skips the rest of the loop body and jumps to the **end-expression** (`++i`), then re-tests the condition. So when `i == 3` the `continue` fires, `++i` still increments `i` to `4`, and the loop proceeds normally. The output is `1 2 4 5`. The \"infinite loop\" distractor is plausible if you confuse `for` with `while`: in a `while` loop, `continue` would jump straight back to the condition, so if the increment lived in the body after the `continue`, it would be skipped and you could loop forever — but `for`'s end-expression is always safe."
+    },
+    {
+      "id": "c08-d3",
+      "lesson": "88--introduction-to-loops-and-while-statements",
+      "tier": "fix",
+      "title": "Fix the digit-sum loop",
+      "promptMd": "The function should return the sum of all decimal digits of `n`, but it gives wrong answers for some inputs. Find and fix the off-by-one in the loop condition.",
+      "code": "// Student file: function definitions only, no main()\n\n// Returns the sum of all decimal digits of n (n >= 0).\n// sumOfDigits(123) -> 6,  sumOfDigits(7) -> 7, sumOfDigits(0) -> 0\nint sumOfDigits(int n)\n{\n    int sum { 0 };\n    while (n > 1)          // BUG: should be n > 0\n    {\n        sum += n % 10;\n        n /= 10;\n    }\n    return sum;\n}",
+      "harness": "#include <iostream>\n#include <cstdlib>\n\n// Declaration — student supplies the definition\nint sumOfDigits(int n);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @ line \" << __LINE__ << '\\n'; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(sumOfDigits(0)   == 0);\n    CHECK(sumOfDigits(7)   == 7);   // single digit\n    CHECK(sumOfDigits(10)  == 1);\n    CHECK(sumOfDigits(123) == 6);\n    CHECK(sumOfDigits(999) == 27);\n    if (!fails) { std::cout << \"PASS\\n\"; }\n    return fails ? 1 : 0;\n}",
+      "solution": "// Student file: function definitions only, no main()\n\n// Returns the sum of all decimal digits of n (n >= 0).\n// sumOfDigits(123) -> 6,  sumOfDigits(7) -> 7, sumOfDigits(0) -> 0\nint sumOfDigits(int n)\n{\n    int sum { 0 };\n    while (n > 0)          // correct: n > 0 so we handle every digit including single-digit\n    {\n        sum += n % 10;\n        n /= 10;\n    }\n    return sum;\n}",
+      "explanationMd": "The condition `n > 1` stops the loop when `n` has been reduced to exactly `1`, discarding that last digit. For `n == 7` the loop body runs once (adding 7) and then `n` becomes 0, so it happens to pass — but for `n == 10`, after peeling the `0` digit `n` becomes `1`, the loop exits without ever adding `1`, and the sum is wrong. The fix is `n > 0`: the loop runs until there are no digits left, correctly accumulating the leading digit on every input."
+    },
+    {
+      "id": "c08-d4",
+      "lesson": "89--do-while-statements",
+      "tier": "fix",
+      "title": "Fix the wrong loop kind",
+      "promptMd": "The function should return `\"liftoff\"` when called with `0`, but it doesn't. The bug is in the choice of loop — pick the one whose condition is tested *before* the body runs.",
+      "code": "// Student file: function definitions only, no main()\n#include <string>\n\n// Returns a space-separated countdown string ending with \"liftoff\".\n// countdown(3) -> \"3 2 1 liftoff\"\n// countdown(1) -> \"1 liftoff\"\n// countdown(0) -> \"liftoff\"\nstd::string countdown(int n)\n{\n    std::string result {};\n    do\n    {\n        result += std::to_string(n);\n        result += ' ';\n        --n;\n    } while (n > 0);\n    result += \"liftoff\";\n    return result;\n}",
+      "harness": "#include <iostream>\n#include <string>\n#include <cstdlib>\n\n// Declaration — student supplies the definition\nstd::string countdown(int n);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @ line \" << __LINE__ << '\\n'; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(countdown(0) == \"liftoff\");\n    CHECK(countdown(1) == \"1 liftoff\");\n    CHECK(countdown(3) == \"3 2 1 liftoff\");\n    CHECK(countdown(5) == \"5 4 3 2 1 liftoff\");\n    if (!fails) { std::cout << \"PASS\\n\"; }\n    return fails ? 1 : 0;\n}",
+      "solution": "// Student file: function definitions only, no main()\n#include <string>\n\n// Returns a space-separated countdown string ending with \"liftoff\".\n// countdown(3) -> \"3 2 1 liftoff\"\n// countdown(1) -> \"1 liftoff\"\n// countdown(0) -> \"liftoff\"\nstd::string countdown(int n)\n{\n    std::string result {};\n    while (n > 0)    // use while, not do-while: n=0 must produce no numbers\n    {\n        result += std::to_string(n);\n        result += ' ';\n        --n;\n    }\n    result += \"liftoff\";\n    return result;\n}",
+      "explanationMd": "A `do while` loop **always executes its body at least once** before checking the condition. So for `n == 0` the body runs, appending `\"0 \"`, and the result becomes `\"0 liftoff\"` instead of `\"liftoff\"`. The fix is to use a plain `while` loop, which tests `n > 0` **before** the body runs — so for `n == 0` the body is skipped entirely and only `\"liftoff\"` is appended. Use `do while` only when the body must run at least once before there is anything to test."
+    },
+    {
+      "id": "c08-d5",
+      "lesson": "85--switch-statement-basics",
+      "tier": "write",
+      "title": "Implement hintText with switch",
+      "promptMd": "Write `hintText` using a `switch` statement. Map `-1` to `\"too low\"`, `0` to `\"correct\"`, `1` to `\"too high\"`, and any other value to `\"invalid\"` via the `default` case.",
+      "code": "// Student file: function definitions only, no main()\n#include <string>\n\n// Maps a direction code to a hint string.\n//   -1  -> \"too low\"\n//    0  -> \"correct\"\n//   +1  -> \"too high\"\n// anything else -> \"invalid\"\n//\n// Use a switch statement with a default case.\nstd::string hintText(int code)\n{\n    (void)code;  // remove this line and replace with your switch statement\n    // >>> YOUR CODE HERE <<<\n    return \"\";\n}",
+      "harness": "#include <iostream>\n#include <string>\n#include <cstdlib>\n\n// Declaration — student supplies the definition\nstd::string hintText(int code);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @ line \" << __LINE__ << '\\n'; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(hintText(-1) == \"too low\");\n    CHECK(hintText(0)  == \"correct\");\n    CHECK(hintText(1)  == \"too high\");\n    CHECK(hintText(2)  == \"invalid\");\n    CHECK(hintText(-5) == \"invalid\");\n    if (!fails) { std::cout << \"PASS\\n\"; }\n    return fails ? 1 : 0;\n}",
+      "solution": "// Student file: function definitions only, no main()\n#include <string>\n\n// Maps a direction code to a hint string.\n//   -1  -> \"too low\"\n//    0  -> \"correct\"\n//   +1  -> \"too high\"\n// anything else -> \"invalid\"\nstd::string hintText(int code)\n{\n    switch (code)\n    {\n    case -1:\n        return \"too low\";\n    case 0:\n        return \"correct\";\n    case 1:\n        return \"too high\";\n    default:\n        return \"invalid\";\n    }\n}",
+      "explanationMd": "A `switch` evaluates the expression once and jumps to the matching `case` label. Each case ends with a `return` (which also exits the function, so no `break` is needed). The `default` label is the catch-all: it runs when no `case` matches, which is exactly the behavior needed for any code outside `{-1, 0, 1}`. Omitting `default` would leave unexpected codes returning an uninitialized or empty string — a silent bug."
+    }
+  ]
+}

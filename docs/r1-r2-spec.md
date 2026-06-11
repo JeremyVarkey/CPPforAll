@@ -99,6 +99,14 @@ Rules:
   the functions. Compile = `clang++ -std=c++17 -Wall -Wextra student.cpp harness.cpp`,
   run, exit code 0 = green. Predict-tier `code` may be a full program (never compiled
   client-side).
+- **Template / overload-visibility exception (amended after ch11):** when the drill's
+  point requires the harness's call site to SEE the student's definitions (function
+  templates, or overload-resolution bugs like missing-overload fall-through), the
+  harness uses `#include "student.cpp"` instead of forward declarations. In that
+  model every non-template function in code/solution MUST be `inline` (the judge
+  still compiles student.cpp standalone as a second TU; inline keeps the ODR happy).
+  Default remains forward-declaration; use the include model only when semantics
+  demand it.
 - Concepts must not exceed the drill's chapter (course sequencing — same scope map
   as the labs, `content/drills/CLAUDE.md`).
 - Every claimed predict answer must be the snippet's REAL behavior (compile + run it).

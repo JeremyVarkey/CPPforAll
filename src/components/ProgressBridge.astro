@@ -1,0 +1,182 @@
+---
+/**
+ * ProgressBridge — mounts the R1 progress store on every page that includes it.
+ *
+ *  Responsibilities (per the R1 spec):
+ *   1. Expose the progress module on `window.cppProgress` so tiny inline scripts
+ *      (rail indicators, progress map, welcome-back) and islands can share ONE
+ *      store. The script below is a PROCESSED Astro module script (not
+ *      `is:inline`), so it can `import` the lib directly — single source of
+ *      truth, no duplicated storage logic.
+ *   2. Call `touchVisit()` on first load AND on every `astro:page-load`
+ *      (soft navigations), recording the current chapter as `lastVisited`.
+ *   3. When the page carries a `[data-track-read]` container, wire the read
+ *      trigger: ≥90% scroll of `#scroll`, OR the last tracked section entering
+ *      the viewport, marks the chapter read (once). The handler is SYNCHRONOUS
+ *      (no rAF / timers) — the same reasoning as the scrollspy in
+ *      chapters/[slug]/index.astro: scroll events are already frame-paced, the
+ *      work is a couple of rect reads, and rAF/timeouts get starved in
+ *      backgrounded webviews.
+ *
+ *  Idempotent across soft navs: a module-scoped guard wires the global click/
+ *  scroll plumbing exactly once; per-page re-init runs on each `astro:page-load`.
+ *
+ *  Props: none required. The chapter identity + title + path are read from the
+ *  `[data-track-read]` element's data attributes (set by the owning page), so
+ *  the bridge can also be mounted on the landing page purely to expose
+ *  `window.cppProgress` + record the visit (no read tracking there).
+ */
+---
+
+<span class="cpp-progress-bridge" hidden aria-hidden="true"></span>
+
+<script>
+  import {
+    getProgress,
+    markRead,
+    markLabGreen,
+    markPractice,
+    touchVisit,
+    getStreak,
+    chapterState,
+  } from '../lib/progress';
+
+  type BridgeApi = {
+    getProgress: typeof getProgress;
+    markRead: typeof markRead;
+    markLabGreen: typeof markLabGreen;
+    markPractice: typeof markPractice;
+    touchVisit: typeof touchVisit;
+    getStreak: typeof getStreak;
+    chapterState: typeof chapterState;
+  };
+
+  declare global {
+    interface Window {
+      cppProgress?: BridgeApi;
+      __cppProgressBridge?: { cleanup?: (() => void) | null };
+    }
+  }
+
+  // 1) Expose the store once. Always refresh the reference (HMR / re-eval safe).
+  window.cppProgress = {
+    getProgress,
+    markRead,
+    markLabGreen,
+    markPractice,
+    touchVisit,
+    getStreak,
+    chapterState,
+  };
+
+  // Record the visit for the current page (chapter pages carry the metadata on
+  // the [data-track-read] element; other pages just refresh lastVisited if they
+  // opt in via data-visit-* on the bridge span — but chapters are the journey).
+  function recordVisit() {
+    const el = document.querySelector<HTMLElement>('[data-track-read]');
+    if (!el) return;
+    const slug = el.dataset.chapterSlug;
+    const title = el.dataset.chapterTitle || '';
+    const path = el.dataset.chapterPath || location.pathname;
+    if (slug == null) return;
+    try {
+      window.cppProgress?.touchVisit(slug, title, path);
+    } catch {
+      /* never let progress bookkeeping break the page */
+    }
+  }
+
+  // 2) Read tracking against #scroll, scoped to the current page's container.
+  function initReadTracking() {
+    // Tear down any prior page's listener (soft-nav safe).
+    if (window.__cppProgressBridge?.cleanup) {
+      window.__cppProgressBridge.cleanup();
+      window.__cppProgressBridge.cleanup = null;
+    }
+    const el = document.querySelector<HTMLElement>('[data-track-read]');
+    const scroller = document.getElementById('scroll');
+    if (!el || !scroller) return;
+
+    const slug = el.dataset.chapterSlug;
+    const title = el.dataset.chapterTitle || '';
+    if (slug == null) return;
+
+    // Already read? Don't bother wiring anything.
+    try {
+      if (window.cppProgress?.chapterState(slug).read) return;
+    } catch {
+      /* fall through and wire — a failed read shouldn't disable tracking */
+    }
+
+    // The "last section" sentinel: the deepest tracked lesson section. Reaching
+    // it (top within the viewport) is treated as "finished the chapter" even if
+    // a long final section keeps the scrollbar from hitting the very bottom.
+    const sections = el.querySelectorAll<HTMLElement>('.reader section');
+    const lastSection = sections.length ? sections[sections.length - 1] : null;
+
+    let done = false;
+    const mark = () => {
+      if (done) return;
+      done = true;
+      try {
+        window.cppProgress?.markRead(slug, title);
+      } catch {
+        /* ignore */
+      }
+      cleanup();
+      // Let any rail indicators / maps on the page refresh immediately.
+      document.dispatchEvent(new CustomEvent('cppforall:progress'));
+    };
+
+    // SYNCHRONOUS check — cheap, frame-paced by the scroll event itself.
+    const check = () => {
+      if (done) return;
+      // ≥90% scroll of the scroller.
+      const max = scroller.scrollHeight - scroller.clientHeight;
+      if (max > 0) {
+        const ratio = scroller.scrollTop / max;
+        if (ratio >= 0.9) {
+          mark();
+          return;
+        }
+      } else {
+        // Content shorter than the viewport — nothing to scroll; it's read.
+        mark();
+        return;
+      }
+      // OR: the last tracked section's top has entered the viewport.
+      if (lastSection) {
+        const sr = lastSection.getBoundingClientRect();
+        const vr = scroller.getBoundingClientRect();
+        if (sr.top <= vr.bottom) {
+          mark();
+        }
+      }
+    };
+
+    const onScroll = () => check();
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    if (!window.__cppProgressBridge) window.__cppProgressBridge = {};
+    window.__cppProgressBridge.cleanup = () => {
+      scroller.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+
+    // Initial check: a short chapter may already satisfy the trigger on load.
+    check();
+  }
+
+  function init() {
+    recordVisit();
+    initReadTracking();
+  }
+
+  // Soft navigations: re-run per page. Wire the global listener once.
+  if (!(window as Window & { __cppProgressBridgeWired?: boolean }).__cppProgressBridgeWired) {
+    (window as Window & { __cppProgressBridgeWired?: boolean }).__cppProgressBridgeWired = true;
+    document.addEventListener('astro:page-load', init);
+  }
+  // Run now for the initial (hard) load too.
+  init();
+</script>

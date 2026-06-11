@@ -1,0 +1,70 @@
+{
+  "chapter": 1,
+  "drills": [
+    {
+      "id": "c01-d1",
+      "lesson": "14--variable-assignment-and-initialization",
+      "tier": "predict",
+      "title": "What does this print?",
+      "promptMd": "Read the initialization line closely before choosing an answer.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int a, b = 5;\n    std::cout << a + b << '\\n';\n    return 0;\n}",
+      "choices": [
+        "5",
+        "10",
+        "0",
+        "undefined behavior"
+      ],
+      "answer": 3,
+      "explanationMd": "Only `b` is initialized to 5; `a` is default-initialized, leaving it with an indeterminate (garbage) value. Reading `a` before giving it a value is **undefined behavior** per the C++ standard — the program can print anything, crash, or behave differently across runs. The fix is to give each variable its own initializer: `int a { 0 }, b { 5 };`."
+    },
+    {
+      "id": "c01-d2",
+      "lesson": "14--variable-assignment-and-initialization",
+      "tier": "predict",
+      "title": "What does this print?",
+      "promptMd": "Think about what happens when a `double` value is stored in an `int` variable using copy-initialization.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int x = 4.5;\n    std::cout << x << '\\n';\n    return 0;\n}",
+      "choices": [
+        "4.5",
+        "compile error",
+        "4",
+        "5"
+      ],
+      "answer": 2,
+      "explanationMd": "Copy-initialization (`= 4.5`) silently truncates `4.5` to `4` — the fractional part is discarded without any compiler error (only a warning with `-Wall`). This is a **narrowing conversion**. Brace-initialization (`int x { 4.5 };`) would catch this at compile time as an error, which is exactly why braces are the preferred form."
+    },
+    {
+      "id": "c01-d3",
+      "lesson": "14--variable-assignment-and-initialization",
+      "tier": "fix",
+      "title": "Fix the uninitialized variable",
+      "promptMd": "The function should return `a + 5`, but the tests all fail. Find and fix the bug.",
+      "code": "// Returns a + 5\nint addFive(int a) {\n    int offset, result = 0;   // only result gets 0; offset is uninitialized\n    result = a + offset;\n    return result;\n}",
+      "harness": "#include <iostream>\n\nint addFive(int a);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nint main() {\n    CHECK(addFive(0)  == 5);\n    CHECK(addFive(3)  == 8);\n    CHECK(addFive(-2) == 3);\n    CHECK(addFive(10) == 15);\n    if (!fails) std::cout << \"PASS: all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Returns a + 5\nint addFive(int a) {\n    int offset { 5 };\n    int result { 0 };\n    result = a + offset;\n    return result;\n}",
+      "explanationMd": "The declaration `int offset, result = 0;` initializes only `result` — `offset` is left with an indeterminate garbage value. Reading `offset` is undefined behavior, causing wildly wrong results. The fix is to give each variable its own brace initializer on its own line: `int offset { 5 };`. This is exactly the pitfall the chapter warns about."
+    },
+    {
+      "id": "c01-d4",
+      "lesson": "19--introduction-to-literals-and-operators",
+      "tier": "fix",
+      "title": "Fix the integer arithmetic order",
+      "promptMd": "The function should return a percentage like `percent(3, 4) == 75`, but most cases return 0. Find the operator-ordering bug.",
+      "code": "// Returns score as an integer percentage of maxScore.\n// Example: percent(3, 5) == 60\nint percent(int score, int maxScore) {\n    int result = score / maxScore * 100;  // divides first — loses data\n    return result;\n}",
+      "harness": "#include <iostream>\n\nint percent(int score, int maxScore);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nint main() {\n    CHECK(percent(5, 5)   == 100);\n    CHECK(percent(1, 4)   == 25);\n    CHECK(percent(3, 4)   == 75);\n    CHECK(percent(0, 10)  == 0);\n    if (!fails) std::cout << \"PASS: all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Returns score as an integer percentage of maxScore.\nint percent(int score, int maxScore) {\n    int result = score * 100 / maxScore;  // multiply first to keep precision\n    return result;\n}",
+      "explanationMd": "Integer division truncates toward zero: `3 / 4` evaluates to `0`, not `0.75`, so `0 * 100` is always `0`. The fix is to multiply before dividing — `score * 100 / maxScore` — so the numerator stays large enough that the final division does not discard meaningful data. The order of operands in an arithmetic expression matters whenever integer division is involved."
+    },
+    {
+      "id": "c01-d5",
+      "lesson": "110--introduction-to-expressions",
+      "tier": "write",
+      "title": "Compute a perimeter inline",
+      "promptMd": "Implement the function body using a single return statement with an inline arithmetic expression — no extra variables needed.",
+      "code": "// Returns the perimeter of a rectangle: 2 * (width + height).\nint perimeter([[maybe_unused]] int width, [[maybe_unused]] int height) {\n    // >>> YOUR CODE HERE <<<\n    return 0;\n}",
+      "harness": "#include <iostream>\n\nint perimeter(int width, int height);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nint main() {\n    CHECK(perimeter(3, 4)  == 14);\n    CHECK(perimeter(5, 5)  == 20);\n    CHECK(perimeter(1, 10) == 22);\n    CHECK(perimeter(0, 0)  == 0);\n    if (!fails) std::cout << \"PASS: all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Returns the perimeter of a rectangle: 2 * (width + height).\nint perimeter(int width, int height) {\n    return 2 * (width + height);\n}",
+      "explanationMd": "Wherever C++ expects a single value, a full arithmetic expression works just as well. Writing `return 2 * (width + height);` computes the result inline — no intermediate variable is needed. The parentheses control evaluation order (addition first, then multiplication), mirroring the standard mathematical formula for perimeter."
+    }
+  ]
+}

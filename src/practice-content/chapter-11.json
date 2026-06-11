@@ -1,0 +1,70 @@
+{
+  "chapter": 11,
+  "drills": [
+    {
+      "id": "c11-d1",
+      "lesson": "113--function-overload-resolution-and-ambiguous-matches",
+      "tier": "predict",
+      "title": "Which overload does a char pick?",
+      "promptMd": "A `char` argument finds both `show(int)` and `show(double)` in scope — predict which runs and what prints.",
+      "code": "#include <iostream>\n\nvoid show(int x)    { std::cout << \"int:\" << x << \"\\n\"; }\nvoid show(double x) { std::cout << \"double:\" << x << \"\\n\"; }\n\nint main()\n{\n    char c { 'A' };\n    show(c);\n    return 0;\n}",
+      "choices": [
+        "double:65",
+        "int:65",
+        "int:A",
+        "compile error: ambiguous call"
+      ],
+      "answer": 1,
+      "explanationMd": "Overload resolution checks the matching ladder in order. Converting `char` to `int` is a **numeric promotion** (rung 2), while converting `char` to `double` would be a numeric conversion (rung 3). The compiler stops at the earliest rung where exactly one overload wins, so `show(int)` is selected. `'A'` has ASCII value 65, giving `int:65`."
+    },
+    {
+      "id": "c11-d2",
+      "lesson": "117--function-template-instantiation",
+      "tier": "predict",
+      "title": "Can deduction handle mixed argument types?",
+      "promptMd": "The template has one type parameter `T`. Predict what happens when the two arguments have different types.",
+      "code": "#include <iostream>\n\ntemplate <typename T>\nT myMax(T a, T b)\n{\n    return (a > b) ? a : b;\n}\n\nint main()\n{\n    std::cout << myMax(3, 4.5) << \"\\n\";\n    return 0;\n}",
+      "choices": [
+        "4",
+        "4.5",
+        "3",
+        "compile error: deduced conflicting types for T"
+      ],
+      "answer": 3,
+      "explanationMd": "Template argument deduction does **not** perform conversions — it matches argument types exactly. The first argument `3` says `T = int`; the second `4.5` says `T = double`. Because both arguments must agree on a single `T` and they disagree, deduction fails and the compiler reports a conflict. To fix this, either write `myMax<double>(3, 4.5)` to force `T`, or use a two-parameter template (`template <typename T, typename U>`) with an `auto` return."
+    },
+    {
+      "id": "c11-d3",
+      "lesson": "118--function-templates-with-multiple-template-types",
+      "tier": "fix",
+      "title": "Return type narrows the result",
+      "promptMd": "The template multiplies two values of possibly different types — but it silently loses the fractional part when `T` is `int`. Fix the return type so the function returns whatever the multiplication actually produces.",
+      "code": "// Bug: the return type is pinned to T, so the result is narrowed\n// when T and U produce a wider type. Fix the return type declaration\n// so the function returns whatever the multiplication actually produces.\n\ntemplate <typename T, typename U>\nT scale(T value, U factor)\n{\n    return value * factor;\n}",
+      "harness": "#include \"student.cpp\"\n#include <iostream>\n#include <type_traits>\n\nstatic int fails { 0 };\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    // scale(2, 1.5): int * double should produce double 3.0, not int 3\n    auto result = scale(2, 1.5);\n    CHECK(result == 3.0);\n    CHECK(std::is_floating_point_v<decltype(result)>);\n\n    // scale(4, 2): int * int = int 8\n    auto result2 = scale(4, 2);\n    CHECK(result2 == 8);\n\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "template <typename T, typename U>\nauto scale(T value, U factor)\n{\n    return value * factor;\n}",
+      "explanationMd": "When the return type is `T` and a call uses `T = int, U = double`, the product `value * factor` is a `double` — but it gets truncated back to `int` on return. Using `auto` as the return type tells the compiler to deduce the return type from the `return` expression itself, preserving the full `double` result. Pair `auto` returns with multi-type templates whenever the result type depends on the combination of argument types."
+    },
+    {
+      "id": "c11-d4",
+      "lesson": "116--function-templates",
+      "tier": "write",
+      "title": "Write a myMin function template",
+      "promptMd": "Implement a function template `myMin` that returns the smaller of two values of the same type.",
+      "code": "// ─── TASK: Implement myMin ────────────────────────────────────────\n// Write a function template named myMin that accepts two parameters\n// of the same type T and returns the smaller of the two.\n// Requirements:\n//   - Declare one type template parameter T\n//   - Parameters and return type are all T\n//   - Use only the < operator (no std::min)\n//\n//   >>> YOUR CODE HERE <<<\n//\n// ──────────────────────────────────────────────────────────────────\n\ntemplate <typename T>\nT myMin(T a, T b)\n{\n    // >>> YOUR CODE HERE <<<\n    // (stub so the file compiles — the tests will be RED until you fix it)\n    return T{};\n}\n",
+      "harness": "#include \"student.cpp\"\n#include <iostream>\n\nstatic int fails { 0 };\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(myMin(3, 5)     == 3);\n    CHECK(myMin(5, 3)     == 3);\n    CHECK(myMin(7, 7)     == 7);\n    CHECK(myMin(1.5, 2.5) == 1.5);\n    CHECK(myMin('a', 'z') == 'a');\n\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "template <typename T>\nT myMin(T a, T b)\n{\n    return (a < b) ? a : b;\n}",
+      "explanationMd": "A function template uses `template <typename T>` to introduce a type placeholder. The body is written once in terms of `T`, and the compiler generates a separate, fully type-checked function for each distinct type you actually call it with — `int`, `double`, `char`, and so on. Template argument deduction fills in `T` automatically from the argument types, so callers write `myMin(3, 5)` exactly like a regular function call."
+    },
+    {
+      "id": "c11-d5",
+      "lesson": "113--function-overload-resolution-and-ambiguous-matches",
+      "tier": "fix",
+      "title": "Missing bool overload lets true fall through",
+      "promptMd": "Without a `bool` overload, `describe(true)` silently promotes to `describe(int)` and returns the wrong tag. Add the missing overload so the tests pass.",
+      "code": "#include <string>\n\n// describe() should return a human-readable tag for its argument.\n// Bug: there is no describe(bool) overload. When describe(true) is called,\n// overload resolution promotes bool to int (rung 2 of the matching ladder)\n// and selects describe(int), returning \"int:1\" instead of \"bool:true\".\n// Fix: add a describe(bool) overload that returns \"bool:true\" or \"bool:false\".\n\ninline std::string describe(int x)\n{\n    return \"int:\" + std::to_string(x);\n}\n\ninline std::string describe(double x)\n{\n    return \"double:\" + std::to_string(x);\n}",
+      "harness": "#include \"student.cpp\"\n#include <string>\n#include <iostream>\n\nstatic int fails { 0 };\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(describe(42)    == \"int:42\");\n    CHECK(describe(3.14)  == \"double:3.140000\");\n    CHECK(describe(true)  == \"bool:true\");\n    CHECK(describe(false) == \"bool:false\");\n\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <string>\n\ninline std::string describe(int x)\n{\n    return \"int:\" + std::to_string(x);\n}\n\ninline std::string describe(double x)\n{\n    return \"double:\" + std::to_string(x);\n}\n\ninline std::string describe(bool x)\n{\n    return x ? \"bool:true\" : \"bool:false\";\n}",
+      "explanationMd": "When `describe(true)` is called and no `bool` overload exists, the compiler looks one rung down the matching ladder — numeric promotion — and finds that `bool` promotes to `int`. It selects `describe(int)`, returning `\"int:1\"` instead of `\"bool:true\"`. Adding an explicit `describe(bool)` overload gives the compiler an exact match at rung 1, which always beats the rung-2 promotion. This is exactly the pattern the chapter lab's `describe(bool)` overload is designed to catch. (The `inline` keyword on these functions lets the test harness include this file directly — it is not part of the bug or the fix.)"
+    }
+  ]
+}

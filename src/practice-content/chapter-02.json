@@ -1,0 +1,60 @@
+{
+  "chapter": 2,
+  "drills": [
+    {
+      "id": "c02-d1",
+      "lesson": "24--introduction-to-function-parameters-and-arguments",
+      "tier": "predict",
+      "title": "Does modifying a parameter change the caller's variable?",
+      "promptMd": "Arguments are passed by value in C++. Commit to an answer before moving on.",
+      "code": "#include <iostream>\n\nvoid doubleIt(int x)\n{\n    x = x * 2;\n}\n\nint main()\n{\n    int n{ 5 };\n    doubleIt(n);\n    std::cout << n << '\\n';\n    return 0;\n}",
+      "choices": ["10", "5", "compile error", "undefined behavior"],
+      "answer": 1,
+      "explanationMd": "Arguments are **passed by value**: `doubleIt` receives a *copy* of `n` in its own local parameter `x`. Assigning `x = x * 2` only changes that copy — the original `n` in `main` is untouched. Control returns to `main`, which prints `n` unchanged: `5`."
+    },
+    {
+      "id": "c02-d2",
+      "lesson": "23--void-functions-non-value-returning-functions",
+      "tier": "predict",
+      "title": "What happens when you stream a void function's result?",
+      "promptMd": "A void function has no return value. What does trying to print its result do?",
+      "code": "#include <iostream>\n\nvoid printGreeting()\n{\n    std::cout << \"Hello\\n\";\n}\n\nint main()\n{\n    std::cout << printGreeting() << '\\n';\n    return 0;\n}",
+      "choices": ["Hello", "compile error", "Hello\n0", "0"],
+      "answer": 1,
+      "explanationMd": "A `void` function returns *nothing* — it has no value to give back. The expression `printGreeting()` produces no value, yet `<<` requires a value on its right-hand side. The compiler rejects this as an error: *invalid operands to binary expression ('ostream' and 'void')*. To print a greeting, call `printGreeting();` as its own statement; never use its call where a value is expected."
+    },
+    {
+      "id": "c02-d3",
+      "lesson": "22--function-return-values-value-returning-functions",
+      "tier": "fix",
+      "title": "Fix the missing computation in scaledSum()",
+      "promptMd": "The function is supposed to return `(a + b) * scale`, but all the tests fail. Find and fix the return statement.",
+      "code": "// Fix this file — no main() needed here.\n\n// Returns the sum of a and b, multiplied by scale.\nint scaledSum(int a, int b, int scale)\n{\n    int sum{ a + b };\n    return sum;          // bug: forgot to apply scale\n}",
+      "harness": "#include <iostream>\n\nint scaledSum(int a, int b, int scale);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(scaledSum(2, 3, 4) == 20);\n    CHECK(scaledSum(1, 1, 1) == 2);\n    CHECK(scaledSum(0, 5, 3) == 15);\n    CHECK(scaledSum(3, 3, 2) == 12);\n    if (!fails)\n        std::cout << \"PASS all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Returns the sum of a and b, multiplied by scale.\nint scaledSum(int a, int b, int scale)\n{\n    int sum{ a + b };\n    return sum * scale;  // apply scale before returning\n}",
+      "explanationMd": "The `return` statement is what sends a value back to the caller — but it must return the *right* value. Here the intermediate variable `sum` holds only the addition; the multiplication by `scale` was simply never applied. Changing `return sum;` to `return sum * scale;` completes the computation. This is the most common beginner oversight: finishing the intermediate steps but forgetting to include the final operation in the `return` expression."
+    },
+    {
+      "id": "c02-d4",
+      "lesson": "22--function-return-values-value-returning-functions",
+      "tier": "fix",
+      "title": "Fix the integer-division bug in average()",
+      "promptMd": "The function declares `double` as its return type but still truncates results. Find the one-character fix.",
+      "code": "// Fix this file — no main() needed here.\n\n// average(a, b): returns the arithmetic mean of a and b as a double.\ndouble average(int a, int b)\n{\n    return (a + b) / 2;   // why does this lose the decimal part?\n}",
+      "harness": "#include <iostream>\n\ndouble average(int a, int b);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(average(3, 4) == 3.5);\n    CHECK(average(1, 2) == 1.5);\n    CHECK(average(10, 10) == 10.0);\n    CHECK(average(0, 1) == 0.5);\n    if (!fails)\n        std::cout << \"PASS all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "double average(int a, int b)\n{\n    return (a + b) / 2.0;  // 2.0 forces floating-point division\n}",
+      "explanationMd": "When both operands of `/` are `int`, C++ performs **integer division** and discards the remainder *before* converting to `double`. The return type `double` only affects what happens to the already-truncated result. Writing `2.0` (a `double` literal) instead of `2` forces a floating-point division, preserving the fractional part. You will study this in full in Chapter 4; for now remember: the types of the *operands* determine how the operation happens, not the type you store the result in."
+    },
+    {
+      "id": "c02-d5",
+      "lesson": "24--introduction-to-function-parameters-and-arguments",
+      "tier": "write",
+      "title": "Implement sumOfSquares(a, b)",
+      "promptMd": "Write a function that returns the sum of the squares of its two integer parameters.",
+      "code": "// Complete this file — no main() needed here.\n\n// sumOfSquares(a, b): returns a*a + b*b\n// Example: sumOfSquares(3, 4) == 25\nint sumOfSquares(int a, int b)\n{\n    // >>> YOUR CODE HERE <<<\n    return 0;\n}",
+      "harness": "#include <iostream>\n\nint sumOfSquares(int a, int b);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << \"\\n\"; ++fails; } } while(0)\n\nint main()\n{\n    CHECK(sumOfSquares(3, 4)  == 25);   // 9 + 16\n    CHECK(sumOfSquares(0, 5)  == 25);   // 0 + 25\n    CHECK(sumOfSquares(1, 1)  == 2);    // 1 + 1\n    CHECK(sumOfSquares(5, 0)  == 25);   // 25 + 0\n    CHECK(sumOfSquares(6, 8)  == 100);  // 36 + 64\n    if (!fails)\n        std::cout << \"PASS all checks\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// sumOfSquares(a, b): returns a*a + b*b\nint sumOfSquares(int a, int b)\n{\n    return a * a + b * b;\n}",
+      "explanationMd": "A function's return value is computed from whatever expression you place after `return`. Here both parameters are used: `a * a` squares the first, `b * b` squares the second, and `+` combines them. A common mistake is writing `(a + b) * (a + b)`, which is `(a + b)²` — a different quantity. Another mistake is returning only `a * a` and forgetting `b`. Because arguments are passed by value, the originals in the caller are never modified, only read."
+    }
+  ]
+}

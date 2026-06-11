@@ -1,0 +1,70 @@
+{
+  "chapter": 3,
+  "drills": [
+    {
+      "id": "c03-d1",
+      "lesson": "35--more-debugging-tactics",
+      "tier": "predict",
+      "title": "What does this program print?",
+      "promptMd": "The program is compiled without `-DDEBUG_MODE`. Read carefully — what appears on standard output?",
+      "code": "#include <iostream>\n\nint compute(int x)\n{\n#ifdef DEBUG_MODE\n    std::cerr << \"input: \" << x << '\\n';\n#endif\n    return x * 2;\n}\n\nint main()\n{\n    int result { compute(5) };\n    std::cout << result << '\\n';\n    return 0;\n}",
+      "choices": [
+        "10",
+        "input: 5\n10",
+        "10\ninput: 5",
+        "compile error"
+      ],
+      "answer": 0,
+      "explanationMd": "When `DEBUG_MODE` is not defined the preprocessor removes the entire `#ifdef … #endif` block before the compiler ever sees it — the `std::cerr` line is literally absent from the compiled binary. Only `std::cout << result` executes, printing `10`. \"compile error\" is wrong because an undefined macro is not an error; the block is simply omitted. The `input: 5` distractors are wrong because the `cerr` statement was eliminated at preprocessing time."
+    },
+    {
+      "id": "c03-d2",
+      "lesson": "31--syntax-and-semantic-errors",
+      "tier": "predict",
+      "title": "Logical error: what does this print?",
+      "promptMd": "The function is named `area` and called with `width=4, height=5`. What does the program print?",
+      "code": "#include <iostream>\n\nint area(int width, int height)\n{\n    return width + height;  // computes area of a 4x5 rectangle\n}\n\nint main()\n{\n    std::cout << area(4, 5) << '\\n';\n    return 0;\n}",
+      "choices": [
+        "20",
+        "9",
+        "compile error",
+        "undefined behavior"
+      ],
+      "answer": 1,
+      "explanationMd": "This is a **logical error**: the code uses `+` where `*` was intended. C++ has no way to know the programmer meant multiplication, so it compiles cleanly and prints `4 + 5 = 9` instead of `4 * 5 = 20`. \"compile error\" is the most common wrong answer — a clean compile only certifies that the grammar and types are valid, not that the program is *correct*. Integer addition is well-defined and never undefined behavior."
+    },
+    {
+      "id": "c03-d3",
+      "lesson": "32--the-debugging-process",
+      "tier": "fix",
+      "title": "Fix the wrong coin constant",
+      "promptMd": "The function converts a collection of coins to total cents. One constant is wrong — find and change that single token.",
+      "code": "// Returns the total number of cents represented by the given coins.\n// Bug: one coin's value is wrong.\n\nint totalCents(int nickels, int dimes, int quarters)\n{\n    return nickels * 5 + dimes * 12 + quarters * 25;\n}",
+      "harness": "#include <iostream>\n\nint totalCents(int nickels, int dimes, int quarters);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << '\\n'; ++fails; } } while (0)\n\nint main()\n{\n    CHECK(totalCents(1, 0, 0) == 5);\n    CHECK(totalCents(0, 1, 0) == 10);\n    CHECK(totalCents(0, 0, 1) == 25);\n    CHECK(totalCents(2, 3, 1) == 65);   // 2*5 + 3*10 + 1*25 = 65\n    CHECK(totalCents(0, 10, 0) == 100);\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Fixed: a dime is worth 10 cents, not 12.\n\nint totalCents(int nickels, int dimes, int quarters)\n{\n    return nickels * 5 + dimes * 10 + quarters * 25;\n}",
+      "explanationMd": "The bug is a single wrong constant: `12` where `10` belongs. A dime is worth 10 cents, not 12. This is a classic **logical error** — the program compiles cleanly and runs without crashing, but returns wrong totals for any input that includes dimes. Section 3.2 calls these one-token fixes: the root cause is the incorrect literal `12`, and the smallest correct fix changes only that one token."
+    },
+    {
+      "id": "c03-d4",
+      "lesson": "32--the-debugging-process",
+      "tier": "fix",
+      "title": "Fix the subtracted dimension",
+      "promptMd": "The function should return the perimeter of a rectangle. One arithmetic operator is wrong — change that single token.",
+      "code": "// Returns the perimeter of a rectangle: 2*width + 2*height.\n// Bug: one operator has been flipped.\n\nint perimeter(int width, int height)\n{\n    return 2 * width - 2 * height;\n}",
+      "harness": "#include <iostream>\n\nint perimeter(int width, int height);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << '\\n'; ++fails; } } while (0)\n\nint main()\n{\n    CHECK(perimeter(3, 4)  == 14);   // 2*3 + 2*4\n    CHECK(perimeter(5, 5)  == 20);   // square: 4*5\n    CHECK(perimeter(1, 1)  == 4);\n    CHECK(perimeter(6, 2)  == 16);   // 2*6 + 2*2\n    CHECK(perimeter(10, 1) == 22);   // 2*10 + 2*1\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// Fixed: addition combines both dimensions, subtraction does not.\n\nint perimeter(int width, int height)\n{\n    return 2 * width + 2 * height;\n}",
+      "explanationMd": "The bug is a single wrong operator: `-` where `+` belongs. Subtracting `2 * height` instead of adding it gives the wrong result for every input except when `height` is zero. This mirrors the \"six bugs, each a single wrong operator or constant\" design of the Coin-Tray Auditor lab: the smallest correct fix is the one that changes only the one incorrect token."
+    },
+    {
+      "id": "c03-d5",
+      "lesson": "33--a-strategy-for-debugging",
+      "tier": "write",
+      "title": "Implement the height conversion",
+      "promptMd": "Implement `toTotalInches(feet, extraInches)`: return the total number of inches. There are 12 inches in one foot.",
+      "code": "// Converts a height given as feet and leftover inches into total inches.\n// There are 12 inches in one foot.\n// Examples:\n//   toTotalInches(5, 3)  -> 63   (5 * 12 + 3)\n//   toTotalInches(1, 0)  -> 12\n//   toTotalInches(0, 7)  ->  7\n\nint toTotalInches(int feet, int extraInches)\n{\n    // >>> YOUR CODE HERE <<<\n    return feet + extraInches;  // placeholder — replace with the correct formula\n}",
+      "harness": "#include <iostream>\n\nint toTotalInches(int feet, int extraInches);\n\nstatic int fails = 0;\n#define CHECK(cond) do { if (!(cond)) { std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << '\\n'; ++fails; } } while (0)\n\nint main()\n{\n    CHECK(toTotalInches(0, 0)  == 0);\n    CHECK(toTotalInches(1, 0)  == 12);\n    CHECK(toTotalInches(0, 7)  == 7);\n    CHECK(toTotalInches(5, 3)  == 63);\n    CHECK(toTotalInches(6, 0)  == 72);\n    CHECK(toTotalInches(3, 11) == 47);   // 3*12 + 11\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// 12 inches per foot, plus the leftover inches.\n\nint toTotalInches(int feet, int extraInches)\n{\n    return feet * 12 + extraInches;\n}",
+      "explanationMd": "The formula is `feet * 12 + extraInches`. The placeholder `feet + extraInches` uses both parameters (so it compiles warning-clean) but omits the conversion factor, making it fail for any non-trivial input. Section 3.3 stresses starting with an expectation: write down `toTotalInches(5, 3) == 63` *before* coding, then let the mismatch between `5 + 3 = 8` and `63` tell you that a multiplication by 12 is missing."
+    }
+  ]
+}

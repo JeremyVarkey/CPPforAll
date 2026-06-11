@@ -1,6 +1,8 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
 import Icon from '../components/Icon.astro';
+import ProgressBridge from '../components/ProgressBridge.astro';
+import ProgressMap from '../components/ProgressMap.astro';
 import chapters from '../generated/chapters.json';
 
 /* spread of starting points, mirroring the prototype's landing chips */
@@ -16,6 +18,7 @@ const chips = chipNums
   title="CPPforAll — Learn C++ from scratch, free"
   description="A calm, free place to learn C++: 29 chapters of notes and hands-on labs you can read and practice right in your browser."
 >
+  <ProgressBridge />
   <div class="landing swap">
     <Icon name="spark" class="spark-lg" />
     <h1>Learn C++ from scratch.</h1>
@@ -23,6 +26,18 @@ const chips = chipNums
       A calm, free place to read and practice — 29 chapters of notes and
       hands-on labs, right in your browser. Pick a chapter to begin.
     </p>
+
+    {/* Welcome-back block — hidden server-side (no flash for first-time
+        visitors); the script below unhides it only when lastVisited exists. */}
+    <div class="welcome-back" id="welcome-back" hidden>
+      <div class="wb-label">Welcome back</div>
+      <a class="btn btn-primary wb-resume" id="wb-resume" href="/">
+        <Icon name="book" />
+        <span class="wb-resume-text">Continue</span>
+      </a>
+      <ProgressMap />
+    </div>
+
     <div class="start-tags">
       {chips.map((c) => (
         <a class="start-chip" href={`/chapters/${c.slug}/`}>
@@ -31,4 +46,68 @@ const chips = chipNums
       ))}
     </div>
   </div>
+
+  <script is:inline>
+    /* Welcome-back: reveal + populate the resume CTA when lastVisited exists.
+       Runs on load + soft navs. Hidden by default so first-time visitors see
+       the page exactly as before — no layout flash. */
+    (function () {
+      function chapterNumFromPath(path) {
+        var m = /\/chapters\/(\d+)/.exec(path || '');
+        return m ? String(parseInt(m[1], 10)) : null;
+      }
+      function apply() {
+        var block = document.getElementById('welcome-back');
+        var resume = document.getElementById('wb-resume');
+        if (!block || !resume) return;
+        var api = window.cppProgress;
+        var lv = null;
+        try { lv = api && api.getProgress ? api.getProgress().lastVisited : null; } catch (e) { lv = null; }
+        if (!lv || !lv.path) { block.hidden = true; return; }
+        var num = chapterNumFromPath(lv.path);
+        var label = lv.title
+          ? ('Continue Chapter ' + (num || '') + ' — ' + lv.title)
+          : 'Continue where you left off';
+        resume.setAttribute('href', lv.path);
+        var txt = resume.querySelector('.wb-resume-text');
+        if (txt) txt.textContent = label.replace(/\s+—\s+$/, '');
+        block.hidden = false;
+      }
+      if (!window.__cppWelcomeWired) {
+        window.__cppWelcomeWired = true;
+        document.addEventListener('astro:page-load', apply);
+        document.addEventListener('cppforall:progress', apply);
+      }
+      apply();
+    })();
+  </script>
 </AppShell>
+
+<style>
+  .welcome-back {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin: 4px 0 32px;
+    padding: 22px 26px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-panel);
+    max-width: 420px;
+  }
+  .welcome-back[hidden] { display: none; }
+  .wb-label {
+    font-family: var(--sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .wb-resume {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+</style>

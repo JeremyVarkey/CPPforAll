@@ -27,6 +27,12 @@ dist/
 .astro/
 src/generated/
 
+# ── EXCEPTION: the judge DOES need the R2 practice content (baked at /app/practice
+# via the Dockerfile's `COPY src/practice-content ./practice`). Re-include it after
+# the blanket `src/` exclusion above so it survives in the build context.
+!src/practice-content
+!src/practice-content/**
+
 # ── Notes (the judge only needs drills) ───────────────────────────────────────
 content/notes/
 

@@ -19,14 +19,19 @@
 import { createServer } from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { runJob } from './runner.mjs';
+import { runJob, runPracticeJob, loadPracticeChapter, findDrill } from './runner.mjs';
 
 // ── Config ───────────────────────────────────────────────────────────────────
 const PORT = Number(process.env.PORT || 8080);
 const MANIFESTS_DIR = process.env.MANIFESTS_DIR || '/app/manifests';
+const PRACTICE_DIR = process.env.PRACTICE_DIR || '/app/practice';
 const MAX_BODY_BYTES = 256 * 1024; // 256KB → 413 over this
 const MIN_CHAPTER = 1;
 const MAX_CHAPTER = 28;
+// Practice (R2) is authored for chapters 1–12; a request outside that is invalid.
+const MIN_PRACTICE_CHAPTER = 1;
+const MAX_PRACTICE_CHAPTER = 12;
+const DRILL_ID_RE = /^c\d{2}-d\d+$/;
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS
   || 'https://cppforall.com,http://localhost:4321')
@@ -228,9 +233,62 @@ function validateRunBody(parsed, manifest) {
   return { ok: true, chapter, mode: parsed.mode, files };
 }
 
+// ── Request validation for a PRACTICE /run body ──────────────────────────────
+// Practice body shape:
+//   { "practice": { "chapter": 4, "drill": "c04-d2" }, "files": { "student.cpp": "..." } }
+// The ONLY accepted file key is "student.cpp". Harness/solution are baked
+// server-side and never accepted from (nor returned to) the client.
+function validatePracticeBody(parsed) {
+  const p = parsed.practice;
+  if (p === null || typeof p !== 'object' || Array.isArray(p)) {
+    return { error: 'practice must be an object { chapter, drill }' };
+  }
+  const chapter = p.chapter;
+  if (!Number.isInteger(chapter) || chapter < MIN_PRACTICE_CHAPTER || chapter > MAX_PRACTICE_CHAPTER) {
+    return { error: `practice.chapter must be an integer in ${MIN_PRACTICE_CHAPTER}..${MAX_PRACTICE_CHAPTER}` };
+  }
+  if (typeof p.drill !== 'string' || !DRILL_ID_RE.test(p.drill)) {
+    return { error: 'practice.drill must be a drill id like "c04-d2"' };
+  }
+  const files = parsed.files;
+  if (files === null || typeof files !== 'object' || Array.isArray(files)) {
+    return { error: 'files must be an object { "student.cpp": text }' };
+  }
+  const keys = Object.keys(files);
+  for (const k of keys) {
+    if (k !== 'student.cpp') {
+      return { error: `practice accepts only "student.cpp"; got "${k}"` };
+    }
+    if (typeof files[k] !== 'string') {
+      return { error: 'student.cpp content must be a string' };
+    }
+  }
+  return { ok: true, chapter, drill: p.drill, files: { 'student.cpp': files['student.cpp'] ?? '' } };
+}
+
 // ── Route handlers ───────────────────────────────────────────────────────────
 async function handleHealthz(req, res, cors) {
   sendJson(res, 200, { status: 'ok', active, queued: waiting.length }, cors);
+}
+
+async function handlePractice(req, res, cors, chapterStr) {
+  const chapter = Number(chapterStr);
+  if (!Number.isInteger(chapter) || chapter < MIN_PRACTICE_CHAPTER || chapter > MAX_PRACTICE_CHAPTER) {
+    sendError(res, 400, 'invalid', `chapter must be an integer in ${MIN_PRACTICE_CHAPTER}..${MAX_PRACTICE_CHAPTER}`, cors);
+    return;
+  }
+  const practice = await loadPracticeChapter(chapter);
+  if (!practice || !Array.isArray(practice.drills)) {
+    sendError(res, 404, 'not_found', `no practice for chapter ${chapter}`, cors);
+    return;
+  }
+  // PUBLIC subset ONLY: drill ids + tiers. The client page already has prompts,
+  // code, and choices statically; it just needs to confirm availability.
+  // Harness, solution, code, choices, answers are NEVER exposed here.
+  sendJson(res, 200, {
+    chapter,
+    drills: practice.drills.map((d) => ({ id: d.id, tier: d.tier })),
+  }, cors);
 }
 
 async function handleManifest(req, res, cors, chapterStr) {
@@ -286,6 +344,52 @@ async function handleRun(req, res, cors, ip) {
   }
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     sendError(res, 400, 'invalid', 'body must be a JSON object', cors);
+    return;
+  }
+
+  // ── PRACTICE body? Route to the practice runner. ──────────────────────────
+  // Distinguished by a `practice` key (the lab body uses `chapter` + `mode`).
+  if ('practice' in parsed) {
+    const pv = validatePracticeBody(parsed);
+    if (pv.error) {
+      sendError(res, 400, 'invalid', pv.error, cors);
+      return;
+    }
+    // Confirm the drill exists (→ 404) before taking a concurrency slot.
+    const practice = await loadPracticeChapter(pv.chapter);
+    const drill = findDrill(practice, pv.drill);
+    if (!drill) {
+      sendError(res, 404, 'not_found', `practice drill ${pv.drill} not found for chapter ${pv.chapter}`, cors);
+      return;
+    }
+
+    let queueMsP = 0;
+    try {
+      const r = await acquireSlot();
+      if (typeof r === 'number') queueMsP = r;
+    } catch (e) {
+      if (e.code === 'CAPACITY') {
+        sendError(res, 503, 'at_capacity', 'judge is busy; retry shortly', { ...cors, 'Retry-After': '5' });
+      } else {
+        sendError(res, 500, 'internal', 'queue error', cors);
+      }
+      return;
+    }
+    try {
+      const result = await runPracticeJob({
+        chapter: pv.chapter,
+        drill: pv.drill,
+        files: pv.files,
+        practice,
+        queueMs: queueMsP,
+      });
+      // Response carries ONLY step verdicts + the student program's own output.
+      sendJson(res, 200, { practice: { chapter: pv.chapter, drill: pv.drill }, ...result }, cors);
+    } catch (e) {
+      sendError(res, 500, 'internal', `judge failed: ${e.message}`, cors);
+    } finally {
+      releaseSlot();
+    }
     return;
   }
 
@@ -368,6 +472,11 @@ const server = createServer(async (req, res) => {
       await handleManifest(req, res, cors, chapterStr);
       return;
     }
+    if (req.method === 'GET' && path.startsWith('/practice/')) {
+      const chapterStr = decodeURIComponent(path.slice('/practice/'.length));
+      await handlePractice(req, res, cors, chapterStr);
+      return;
+    }
     if (req.method === 'POST' && path === '/run') {
       await handleRun(req, res, cors, ip);
       return;
@@ -388,7 +497,7 @@ const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}
 if (isMain) {
   server.listen(PORT, () => {
     // eslint-disable-next-line no-console
-    console.log(`[judge] listening on :${PORT}  origins=${ALLOWED_ORIGINS.join(',')}  manifests=${MANIFESTS_DIR}`);
+    console.log(`[judge] listening on :${PORT}  origins=${ALLOWED_ORIGINS.join(',')}  manifests=${MANIFESTS_DIR}  practice=${PRACTICE_DIR}`);
   });
 
   for (const sig of ['SIGTERM', 'SIGINT']) {
@@ -403,4 +512,4 @@ if (isMain) {
   }
 }
 
-export { server, validateRunBody, takeToken, corsHeaders, loadManifest };
+export { server, validateRunBody, validatePracticeBody, takeToken, corsHeaders, loadManifest };

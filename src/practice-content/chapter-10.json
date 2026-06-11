@@ -1,0 +1,60 @@
+{
+  "chapter": 10,
+  "drills": [
+    {
+      "id": "c10-d1",
+      "lesson": "105--arithmetic-conversions",
+      "tier": "predict",
+      "title": "What does this print?",
+      "promptMd": "Both variables are `int`. Trace the types carefully before committing to an answer.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int total { 7 };\n    int count { 2 };\n    double result = total / count;\n    std::cout << result << '\\n';\n    return 0;\n}",
+      "choices": ["3.5", "3", "3.0", "compile error"],
+      "answer": 1,
+      "explanationMd": "`total / count` is `int / int` — the division happens entirely in integer arithmetic and truncates to `3` *before* the result is stored in `result`. Assigning `3` (an integer value) to a `double` then gives `3.0`, but `std::cout` prints `3` for the value `3.0`. The fix is to cast *before* the division: `static_cast<double>(total) / count`."
+    },
+    {
+      "id": "c10-d2",
+      "lesson": "102--floating-point-and-integral-promotion",
+      "tier": "predict",
+      "title": "What is the size of `c`?",
+      "promptMd": "Both `a` and `b` are `char`. Think about what happens to operands before arithmetic runs.",
+      "code": "#include <iostream>\n\nint main()\n{\n    char a { 10 };\n    char b { 20 };\n    auto c { a + b };\n    std::cout << sizeof(c) << '\\n';\n    return 0;\n}",
+      "choices": ["1", "2", "4", "8"],
+      "answer": 2,
+      "explanationMd": "Before the `+` runs, both `char` operands are **promoted to `int`** (integral promotion). The addition is therefore `int + int`, producing an `int` result. `auto` deduces `c` as `int`, and `sizeof(int)` is `4` on this platform — not `1` (the size of `char`). Arithmetic on `char` almost always hands you back an `int`."
+    },
+    {
+      "id": "c10-d3",
+      "lesson": "106--explicit-type-conversion-casting-and-static_cast",
+      "tier": "fix",
+      "title": "Fix the integer-division bug in `mean`",
+      "promptMd": "The function should return the true mathematical average, but it always truncates. Move the `static_cast` to the right place.",
+      "code": "// mean: return the average of two ints as a double.\ndouble mean(int a, int b)\n{\n    return a / b;   // BUG: integer division truncates before conversion\n}",
+      "harness": "#include <iostream>\n#include <cmath>\n\ndouble mean(int a, int b);\n\nstatic int fails = 0;\n\n#define CHECK_CLOSE(got, expected) do { \\\n    if (std::abs((got) - (expected)) > 1e-9) { \\\n        std::cerr << \"FAIL: expected \" << (expected) \\\n                  << \" got \" << (got) << \" @line \" << __LINE__ << '\\n'; \\\n        ++fails; \\\n    } \\\n} while (0)\n\n#define CHECK(cond) do { \\\n    if (!(cond)) { \\\n        std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << '\\n'; \\\n        ++fails; \\\n    } \\\n} while (0)\n\nint main()\n{\n    CHECK_CLOSE(mean(7, 2),  3.5);\n    CHECK_CLOSE(mean(1, 4),  0.25);\n    CHECK_CLOSE(mean(6, 2),  3.0);\n    CHECK_CLOSE(mean(10, 3), 10.0 / 3.0);\n    CHECK(mean(7, 2) != 3.0);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// mean: return the average of two ints as a double.\ndouble mean(int a, int b)\n{\n    return static_cast<double>(a) / b;\n}",
+      "explanationMd": "The bug is that `a / b` performs **integer division** first, discarding the remainder, and only then converts the truncated result to `double`. The cast must appear *before* the division: `static_cast<double>(a) / b` converts `a` to `double`, and the usual arithmetic conversions then promote `b` to `double` as well, so the division is real-valued."
+    },
+    {
+      "id": "c10-d4",
+      "lesson": "103--numeric-conversions",
+      "tier": "write",
+      "title": "Write `safeLength` — a signed string length",
+      "promptMd": "Implement `safeLength` so callers can do signed arithmetic on the result without the unsigned-wrap trap from `std::string::length()`.",
+      "code": "#include <string>\n\n// safeLength: return the length of s as a signed int.\n// This lets callers do signed arithmetic (e.g. subtraction) without\n// the unsigned-wrap trap that std::string::length() would produce.\nint safeLength(const std::string& s)\n{\n    // >>> YOUR CODE HERE <<<\n    // Hint: s.length() returns an unsigned type (std::size_t).\n    // Convert it to int with static_cast so callers get a signed result.\n    (void)s;  // remove this line when you implement\n    return 0;\n}",
+      "harness": "#include <iostream>\n#include <string>\n\nint safeLength(const std::string& s);\n\nstatic int fails = 0;\n\n#define CHECK(cond) do { \\\n    if (!(cond)) { \\\n        std::cerr << \"FAIL: \" #cond \" @line \" << __LINE__ << '\\n'; \\\n        ++fails; \\\n    } \\\n} while (0)\n\nint main()\n{\n    CHECK(safeLength(\"\") == 0);\n    CHECK(safeLength(\"hi\") == 2);\n    CHECK(safeLength(\"hello\") == 5);\n\n    // The key test: signed arithmetic must not wrap\n    int diff = safeLength(\"ab\") - safeLength(\"abcd\");\n    CHECK(diff == -2);\n\n    CHECK(safeLength(\"test\") == 4);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <string>\n\nint safeLength(const std::string& s)\n{\n    return static_cast<int>(s.length());\n}",
+      "explanationMd": "`std::string::length()` returns `std::size_t`, an **unsigned** type. If you subtract two `size_t` values and the result would be negative, the value wraps to a huge positive number instead — a silent, dangerous bug. `static_cast<int>(s.length())` explicitly converts to signed `int`, so callers can subtract, compare with negative values, and reason normally."
+    },
+    {
+      "id": "c10-d5",
+      "lesson": "106--explicit-type-conversion-casting-and-static_cast",
+      "tier": "fix",
+      "title": "Fix the misplaced cast in `percentage`",
+      "promptMd": "The `static_cast` is there, but it's in the wrong place. Find it and move it so the division is floating-point, not integer.",
+      "code": "// percentage: return what fraction `part` is of `total`, as a value 0.0-100.0.\n// e.g. percentage(3, 4) == 75.0\ndouble percentage(int part, int total)\n{\n    return static_cast<double>(part / total) * 100.0;  // BUG: cast is in the wrong place\n}",
+      "harness": "#include <iostream>\n#include <cmath>\n\ndouble percentage(int part, int total);\n\nstatic int fails = 0;\n\n#define CHECK_CLOSE(got, expected) do { \\\n    if (std::abs((got) - (expected)) > 1e-9) { \\\n        std::cerr << \"FAIL: expected \" << (expected) \\\n                  << \" got \" << (got) << \" @line \" << __LINE__ << '\\n'; \\\n        ++fails; \\\n    } \\\n} while (0)\n\nint main()\n{\n    CHECK_CLOSE(percentage(3, 4),   75.0);\n    CHECK_CLOSE(percentage(1, 4),   25.0);\n    CHECK_CLOSE(percentage(1, 3),   100.0 / 3.0);\n    CHECK_CLOSE(percentage(2, 5),   40.0);\n    CHECK_CLOSE(percentage(10, 10), 100.0);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// percentage: return what fraction `part` is of `total`, as a value 0.0-100.0.\ndouble percentage(int part, int total)\n{\n    return static_cast<double>(part) / total * 100.0;\n}",
+      "explanationMd": "`static_cast<double>(part / total)` casts *after* the integer division has already truncated — `part / total` runs first and discards the remainder. Moving the cast inside the operand: `static_cast<double>(part) / total` converts `part` to `double` before the division, so the usual arithmetic conversions promote `total` to `double` as well, giving a real-valued result. The cast must come *before* the operator that needs floating-point precision."
+    }
+  ]
+}

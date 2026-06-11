@@ -47,6 +47,13 @@ export const LIMITS = {
 
 const DRILLS_DIR = process.env.DRILLS_DIR || '/app/drills';
 
+// PRACTICE_DIR holds the FULL authored practice JSON (src/practice-content baked
+// into the image): chapter-NN.json with each drill's `harness` and `solution`.
+// These are used SERVER-SIDE ONLY to compile a fix/write drill; they are never
+// serialized into any response (see runPracticeJob — only step verdicts + the
+// student program's own stdout/stderr go back).
+const PRACTICE_DIR = process.env.PRACTICE_DIR || '/app/practice';
+
 // prlimit is Linux-only (util-linux). On the dev mac it is absent, so we skip it
 // and rely on the Node-level wall-clock + output caps. In the container it exists
 // and we wrap every child. Detect once at module load.
@@ -510,6 +517,152 @@ async function doSubmit(jobDir, manifest, timings) {
   return { overall, steps: out };
 }
 
+// ── Practice mode ────────────────────────────────────────────────────────────
+// A practice drill is function-scoped: the student supplies student.cpp with
+// function definition(s) only (NO main()); the drill's `harness` (baked, never
+// sent to clients) owns main() and the CHECK macros. We compile both TUs into
+// one binary and run it — exit 0 = green, nonzero = red. The harness/solution
+// text NEVER appears in the response.
+
+// Cache the parsed practice file per chapter (baked, immutable at runtime).
+const practiceCache = new Map();
+
+// Exposed for the replay gate, which needs solutions; the SERVER never asks for
+// solution text via this path — runPracticeJob only reads `harness`.
+export async function loadPracticeChapter(chapter) {
+  if (practiceCache.has(chapter)) return practiceCache.get(chapter);
+  const file = join(PRACTICE_DIR, `chapter-${String(chapter).padStart(2, '0')}.json`);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    parsed = null;
+  }
+  practiceCache.set(chapter, parsed);
+  return parsed;
+}
+
+export function findDrill(practiceChapter, drillId) {
+  if (!practiceChapter || !Array.isArray(practiceChapter.drills)) return null;
+  return practiceChapter.drills.find((d) => d && d.id === drillId) || null;
+}
+
+// job: { chapter:number, drill:string, files:{ "student.cpp": text }, queueMs? }
+// `solutionOverride` (replay gate only) lets the green case compile the drill's
+// own solution as the student file without re-reading from PRACTICE_DIR.
+export async function runPracticeJob(job) {
+  const { chapter, drill: drillId, files } = job;
+  const timings = { queueMs: job.queueMs || 0, compileMs: 0, runMs: 0 };
+
+  const practice = job.practice || (await loadPracticeChapter(chapter));
+  const drill = findDrill(practice, drillId);
+  if (!drill) {
+    return {
+      overall: 'error',
+      steps: [{
+        name: 'setup', phase: 'compile', exit: null, verdict: 'error',
+        stdout: '', stderr: '', detail: `practice drill ${drillId} not found for chapter ${chapter}`,
+      }],
+      timings,
+    };
+  }
+  if (drill.tier !== 'fix' && drill.tier !== 'write') {
+    return {
+      overall: 'error',
+      steps: [{
+        name: 'setup', phase: 'compile', exit: null, verdict: 'error',
+        stdout: '', stderr: '', detail: `drill ${drillId} is tier "${drill.tier}" — not runnable`,
+      }],
+      timings,
+    };
+  }
+  if (typeof drill.harness !== 'string' || drill.harness.length === 0) {
+    return {
+      overall: 'error',
+      steps: [{
+        name: 'setup', phase: 'compile', exit: null, verdict: 'error',
+        stdout: '', stderr: '', detail: `drill ${drillId} has no harness`,
+      }],
+      timings,
+    };
+  }
+
+  const studentText = (files && typeof files['student.cpp'] === 'string')
+    ? files['student.cpp']
+    : '';
+
+  let jobDir;
+  try {
+    jobDir = await mkdtemp(join(tmpdir(), `cpppractice-ch${chapter}-`));
+    // Write the two translation units. The harness comes from the baked drill;
+    // the student file is the learner submission. Neither path is learner-named.
+    await writeFile(join(jobDir, 'student.cpp'), String(studentText), 'utf8');
+    await writeFile(join(jobDir, 'harness.cpp'), String(drill.harness), 'utf8');
+
+    // Compile: clang++ -std=c++17 -Wall -Wextra student.cpp harness.cpp -o bin
+    const bin = join(jobDir, '__judge_practice');
+    const flags = ['-std=c++17', '-Wall', '-Wextra'];
+    const t0 = Date.now();
+    const cres = await runChild(CXX, [...flags, 'student.cpp', 'harness.cpp', '-o', bin], { cwd: jobDir });
+    timings.compileMs = Date.now() - t0;
+    if (cres.killed || cres.exitCode !== 0) {
+      return {
+        overall: cres.exitCode === 0 ? 'error' : 'red',
+        steps: [{
+          name: 'compile', phase: 'compile', exit: cres.exitCode, verdict: cres.killed ? 'error' : 'fail',
+          stdout: cres.stdout, stderr: cres.stderr,
+          detail: cres.timedOut ? 'compile timed out'
+            : cres.verdict === 'output-cap' ? 'compiler output exceeded 64KB'
+            : 'compilation failed — fix the errors above',
+        }],
+        timings,
+      };
+    }
+
+    // Run the compiled program. Exit 0 = green.
+    const t1 = Date.now();
+    const rres = await runChild(bin, [], { cwd: jobDir });
+    timings.runMs = Date.now() - t1;
+    if (rres.timedOut || rres.verdict === 'output-cap' || rres.killed) {
+      return {
+        overall: 'error',
+        steps: [{
+          name: 'tests', phase: 'run', exit: rres.exitCode, verdict: 'error',
+          stdout: rres.stdout, stderr: rres.stderr,
+          detail: rres.timedOut ? 'program timed out (wall-clock limit)'
+            : rres.verdict === 'output-cap' ? 'program output exceeded 64KB'
+            : `program killed (signal ${rres.signal || 'unknown'})`,
+        }],
+        timings,
+      };
+    }
+
+    const pass = rres.exitCode === 0;
+    return {
+      overall: pass ? 'green' : 'red',
+      steps: [{
+        name: 'tests', phase: 'run', exit: rres.exitCode, verdict: pass ? 'pass' : 'fail',
+        stdout: rres.stdout, stderr: rres.stderr,
+        detail: pass ? undefined : `tests failed (exit ${rres.exitCode})`,
+      }],
+      timings,
+    };
+  } catch (err) {
+    return {
+      overall: 'error',
+      steps: [{
+        name: 'judge', phase: 'compile', exit: null, verdict: 'error',
+        stdout: '', stderr: '', detail: `judge error: ${err.message}`,
+      }],
+      timings,
+    };
+  } finally {
+    if (jobDir) {
+      await rm(jobDir, { recursive: true, force: true }).catch(() => {});
+    }
+  }
+}
+
 // ── Public entry point. ──────────────────────────────────────────────────────
 // job: { chapter:number, mode:"run"|"submit", files:{path:text}, manifest:object,
 //        queueMs?:number }
@@ -562,4 +715,4 @@ export async function runJob(job) {
   }
 }
 
-export const __test = { normalizeOutput, unifiedDiff, safeJoin, capString, PRLIMIT };
+export const __test = { normalizeOutput, unifiedDiff, safeJoin, capString, PRLIMIT, PRACTICE_DIR };

@@ -1,0 +1,60 @@
+{
+  "chapter": 12,
+  "drills": [
+    {
+      "id": "c12-d1",
+      "lesson": "123--lvalue-references",
+      "tier": "predict",
+      "title": "What does assigning through a reference actually do?",
+      "promptMd": "Trace each variable carefully after `ref = y` executes, then pick the output.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int x { 1 };\n    int y { 2 };\n\n    int& ref { x };\n    ref = y;\n\n    std::cout << x << ' ' << y << '\\n';\n}",
+      "choices": ["1 2", "2 2", "2 1", "compile error"],
+      "answer": 1,
+      "explanationMd": "`ref = y` never reseats the reference — references are permanently bound. It copies `y`'s value (2) into whatever `ref` currently refers to, which is `x`. So after the assignment `x == 2` and `y == 2`. Many learners expect `ref` to start aliasing `y`; that operation simply does not exist for references."
+    },
+    {
+      "id": "c12-d2",
+      "lesson": "1214--type-deduction-with-pointers-references-and-const",
+      "tier": "predict",
+      "title": "Does `auto` preserve `const`?",
+      "promptMd": "Predict what prints — pay close attention to what `auto` deduces.",
+      "code": "#include <iostream>\n\nint main()\n{\n    const int x { 42 };\n    auto y { x };\n\n    y = 99;\n\n    std::cout << x << ' ' << y << '\\n';\n}",
+      "choices": ["42 42", "42 99", "99 99", "compile error"],
+      "answer": 1,
+      "explanationMd": "`auto` deduces `y` as plain `int`, not `const int`. The `const` on `x` is *top-level const* — it qualifies the object itself — and `auto` drops top-level const because a copy is free to be mutable. `x` is never modified (it stays 42), but `y` is an independent, modifiable copy that becomes 99. If you wanted a const copy you'd write `const auto y { x };`."
+    },
+    {
+      "id": "c12-d3",
+      "lesson": "1210--pass-by-address",
+      "tier": "fix",
+      "title": "Fix the swap-by-pointer function",
+      "promptMd": "The function is supposed to swap the two ints the pointers point at, but it leaves them unchanged. Find the bug and fix it.",
+      "code": "// Swap the two integers pointed at by a and b.\nvoid swapByPtr(int* a, int* b)\n{\n    int* tmp { a };\n    a = b;\n    b = tmp;\n}",
+      "harness": "#include <iostream>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nvoid swapByPtr(int* a, int* b);\n\nint main()\n{\n    int x { 10 };\n    int y { 20 };\n    swapByPtr(&x, &y);\n    CHECK(x == 20);\n    CHECK(y == 10);\n\n    int p { 5 };\n    int q { 5 };\n    swapByPtr(&p, &q);\n    CHECK(p == 5);\n    CHECK(q == 5);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "void swapByPtr(int* a, int* b)\n{\n    int tmp { *a };\n    *a = *b;\n    *b = tmp;\n}",
+      "explanationMd": "The broken version swaps the *pointer variables themselves* (`a` and `b` are local copies of the pointers). Since pointers are passed by value, reseating `a` and `b` only changes the function's local copies — the caller's ints are never touched. The fix is to dereference before swapping: `*a` and `*b` are the actual integers in the caller's memory, and writing through them modifies the caller's data."
+    },
+    {
+      "id": "c12-d4",
+      "lesson": "1215--stdoptional",
+      "tier": "write",
+      "title": "Write `findFirst` using `std::optional`",
+      "promptMd": "Implement `findFirst` so it returns the index of the first occurrence of `target` in `text`, or `std::nullopt` if not found.",
+      "code": "#include <optional>\n#include <string_view>\n\n// Return the index of the first occurrence of target in text,\n// or std::nullopt if target does not appear.\nstd::optional<int> findFirst(std::string_view text, char target)\n{\n    (void)text;\n    (void)target;\n    // >>> YOUR CODE HERE <<<\n    return std::nullopt;\n}",
+      "harness": "#include <iostream>\n#include <optional>\n#include <string_view>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nstd::optional<int> findFirst(std::string_view text, char target);\n\nint main()\n{\n    auto r1 { findFirst(\"hello\", 'e') };\n    CHECK(r1.has_value());\n    CHECK(*r1 == 1);\n\n    auto r2 { findFirst(\"hello\", 'l') };\n    CHECK(r2.has_value());\n    CHECK(*r2 == 2);\n\n    auto r3 { findFirst(\"hello\", 'z') };\n    CHECK(!r3.has_value());\n\n    auto r4 { findFirst(\"\", 'a') };\n    CHECK(!r4.has_value());\n\n    auto r5 { findFirst(\"abc\", 'a') };\n    CHECK(r5.has_value());\n    CHECK(*r5 == 0);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <optional>\n#include <string_view>\n\nstd::optional<int> findFirst(std::string_view text, char target)\n{\n    for (int i { 0 }; i < static_cast<int>(text.length()); ++i)\n    {\n        if (text[static_cast<std::size_t>(i)] == target)\n            return i;\n    }\n    return std::nullopt;\n}",
+      "explanationMd": "Loop over each index, compare `text[i]` to `target`, and return the index wrapped in an `optional` as soon as you find a match. After the loop, if no match was found, return `std::nullopt`. The `static_cast<std::size_t>` is needed because `text.length()` returns an unsigned type — comparing it to a signed `int` loop counter without a cast triggers a signed/unsigned comparison warning."
+    },
+    {
+      "id": "c12-d5",
+      "lesson": "1213--in-and-out-parameters",
+      "tier": "write",
+      "title": "Write two in/out parameter functions",
+      "promptMd": "Implement `scale` and `clampToZero` — both take a non-const reference as an in/out parameter and modify the caller's variable directly.",
+      "code": "// Multiply score by multiplier in place (in/out parameter).\nvoid scale(int& score, int multiplier)\n{\n    score *= 1;     // placeholder — tests fail until you implement this\n    (void)multiplier;\n    // >>> YOUR CODE HERE <<<\n}\n\n// If score is strictly below threshold, set it to zero (in/out).\n// If score >= threshold, leave it unchanged.\nvoid clampToZero(int& score, int threshold)\n{\n    (void)score; (void)threshold;\n    // >>> YOUR CODE HERE <<<\n}",
+      "harness": "#include <iostream>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nvoid scale(int& score, int multiplier);\nvoid clampToZero(int& score, int threshold);\n\nint main()\n{\n    int s { 10 };\n    scale(s, 3);\n    CHECK(s == 30);\n\n    int t { 5 };\n    scale(t, 1);\n    CHECK(t == 5);\n\n    int u { 0 };\n    scale(u, 100);\n    CHECK(u == 0);\n\n    int a { 3 };\n    clampToZero(a, 5);\n    CHECK(a == 0);\n\n    int b { 7 };\n    clampToZero(b, 5);\n    CHECK(b == 7);\n\n    int c { 5 };\n    clampToZero(c, 5);\n    CHECK(c == 5);\n\n    if (!fails) std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "void scale(int& score, int multiplier)\n{\n    score = score * multiplier;\n}\n\nvoid clampToZero(int& score, int threshold)\n{\n    if (score < threshold)\n        score = 0;\n}",
+      "explanationMd": "In both functions the reference parameter is an *in/out* parameter: the function both reads the caller's current value and writes back a new one through the same reference. `scale` reads `score`, multiplies it, and writes back through the same name — the caller's variable updates. `clampToZero` reads `score`, checks it against `threshold`, and conditionally writes zero back. Nothing is returned; the side-effect through the reference is the whole point."
+    }
+  ]
+}

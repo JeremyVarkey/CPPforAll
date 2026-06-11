@@ -24,12 +24,15 @@
 //         node test-manifests.mjs 1 2 9      # a subset (chapter numbers)
 
 import { readdir, readFile, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { runJob } from './runner.mjs';
+import { runJob, runPracticeJob } from './runner.mjs';
 
 const MANIFESTS_DIR = process.env.MANIFESTS_DIR || '/app/manifests';
 const DRILLS_WITH_SOLUTIONS_DIR =
   process.env.DRILLS_WITH_SOLUTIONS_DIR || process.env.DRILLS_DIR || '/app/drills';
+// Practice files (with harness + solution) baked from src/practice-content.
+const PRACTICE_DIR = process.env.PRACTICE_DIR || '/app/practice';
 
 function pad(n) {
   return String(n).padStart(2, '0');
@@ -86,6 +89,118 @@ function firstDetail(result) {
   return '';
 }
 
+// ── Practice replay gate ─────────────────────────────────────────────────────
+// For every fix/write drill in every baked practice chapter file: the authored
+// `code` (broken/starter) must compile+run RED, and `solution` must run GREEN.
+// Predict drills have no executable form and are skipped here (their answers are
+// machine-verified separately by the orchestrator). Chapters with no practice
+// file are simply skipped — practice is authored chapter-by-chapter.
+async function listPracticeChapters() {
+  if (!existsSync(PRACTICE_DIR)) return [];
+  const entries = await readdir(PRACTICE_DIR);
+  const chapters = [];
+  for (const e of entries) {
+    const m = /^chapter-(\d{2})\.json$/.exec(e);
+    if (m) chapters.push(Number(m[1]));
+  }
+  return chapters.sort((a, b) => a - b);
+}
+
+async function loadPracticeFile(chapter) {
+  const raw = await readFile(join(PRACTICE_DIR, `chapter-${pad(chapter)}.json`), 'utf8');
+  return JSON.parse(raw);
+}
+
+// Returns the number of failures.
+async function practiceGate(onlyChapters) {
+  let chapters = await listPracticeChapters();
+  if (onlyChapters && onlyChapters.length) {
+    const want = new Set(onlyChapters);
+    chapters = chapters.filter((c) => want.has(c));
+  }
+  if (chapters.length === 0) {
+    console.log('Practice replay gate: no practice files found — skipping.');
+    return 0;
+  }
+
+  console.log(`Practice replay gate: ${chapters.length} chapter(s) — code→red, solution→green`);
+  console.log(`  PRACTICE_DIR=${PRACTICE_DIR}`);
+  console.log('');
+
+  let failures = 0;
+  let drillsChecked = 0;
+  for (const chapter of chapters) {
+    let practice;
+    try {
+      practice = await loadPracticeFile(chapter);
+    } catch (e) {
+      console.log(`✗ practice ch${pad(chapter)}  PARSE ERROR: ${e.message}`);
+      failures++;
+      continue;
+    }
+    const drills = Array.isArray(practice.drills) ? practice.drills : [];
+    const runnable = drills.filter((d) => d && (d.tier === 'fix' || d.tier === 'write'));
+    if (runnable.length === 0) {
+      console.log(`· practice ch${pad(chapter)}  (no fix/write drills)`);
+      continue;
+    }
+
+    for (const drill of runnable) {
+      drillsChecked++;
+      // 1) authored code (broken/starter) → expect red.
+      let codeRes;
+      try {
+        codeRes = await runPracticeJob({
+          chapter, drill: drill.id, files: { 'student.cpp': drill.code }, practice,
+        });
+      } catch (e) {
+        console.log(`✗ ${drill.id}  code run threw: ${e.message}`);
+        failures++;
+        continue;
+      }
+      const codeRed = codeRes.overall === 'red';
+
+      // 2) solution → expect green.
+      let solRes;
+      try {
+        solRes = await runPracticeJob({
+          chapter, drill: drill.id, files: { 'student.cpp': drill.solution }, practice,
+        });
+      } catch (e) {
+        console.log(`✗ ${drill.id}  solution run threw: ${e.message}`);
+        failures++;
+        continue;
+      }
+      const solGreen = solRes.overall === 'green';
+
+      if (codeRed && solGreen) {
+        console.log(`✓ ${drill.id} (${drill.tier})  code→red, solution→green`);
+      } else {
+        failures++;
+        console.log(`✗ ${drill.id} (${drill.tier})`);
+        console.log(`     code     → ${summarize(codeRes)}  ${codeRed ? '' : '(EXPECTED red)'}`);
+        if (!codeRed) {
+          const d = firstDetail(codeRes);
+          if (d) console.log(`        detail: ${d.split('\n').slice(0, 6).join('\n                ')}`);
+        }
+        console.log(`     solution → ${summarize(solRes)}  ${solGreen ? '' : '(EXPECTED green)'}`);
+        if (!solGreen) {
+          const d = firstDetail(solRes);
+          if (d) console.log(`        detail: ${d.split('\n').slice(0, 8).join('\n                ')}`);
+        }
+      }
+    }
+  }
+
+  console.log('');
+  if (failures) {
+    console.log(`PRACTICE GATE: ${failures} drill(s) misbehaved (${drillsChecked} checked).`);
+  } else {
+    console.log(`PRACTICE GATE PASSED: ${drillsChecked} fix/write drill(s) red→green correctly.`);
+  }
+  return failures;
+}
+
 async function main() {
   const argChapters = process.argv.slice(2).map(Number).filter((n) => Number.isInteger(n));
   let chapters;
@@ -96,9 +211,13 @@ async function main() {
     process.exit(2);
   }
 
+  // If there are no manifests, fall through to the practice gate (which may have
+  // files) rather than hard-failing — supports practice-only runs in dev. The
+  // container build always has all 28 manifests, so this branch is dev-only.
   if (chapters.length === 0) {
-    console.error(`No manifests found in ${MANIFESTS_DIR}. Nothing to gate.`);
-    process.exit(2);
+    console.warn(`No manifests found in ${MANIFESTS_DIR}. Running practice gate only.`);
+    const practiceFailures = await practiceGate(argChapters.length ? argChapters : null);
+    process.exit(practiceFailures ? 1 : 0);
   }
 
   // Confirm the with-solutions tree exists.
@@ -173,9 +292,20 @@ async function main() {
   console.log('');
   if (failures) {
     console.error(`REPLAY GATE FAILED: ${failures}/${chapters.length} chapter(s) misbehaved.`);
+  } else {
+    console.log(`REPLAY GATE PASSED: all ${chapters.length} chapter(s) red→green correctly.`);
+  }
+
+  // ── Practice gate (R2) — runs after the lab gate. Scoped by the same chapter
+  // args (if any). Skips entirely when no practice files are baked.
+  console.log('');
+  const practiceFailures = await practiceGate(argChapters.length ? argChapters : null);
+
+  const total = failures + practiceFailures;
+  if (total) {
+    console.error(`\nGATE FAILED: ${failures} lab + ${practiceFailures} practice problem(s).`);
     process.exit(1);
   }
-  console.log(`REPLAY GATE PASSED: all ${chapters.length} chapter(s) red→green correctly.`);
   process.exit(0);
 }
 

@@ -14,6 +14,7 @@ import '../styles/cpp-styles.css';
 import { ClientRouter } from 'astro:transitions';
 import Rail from '../components/Rail.astro';
 import Icon from '../components/Icon.astro';
+import ProgressBridge from '../components/ProgressBridge.astro';
 import chapters from '../generated/chapters.json';
 
 interface Props {
@@ -59,6 +60,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     </script>
   </head>
   <body>
+    {/* one mount covers every page (Astro dedupes module scripts, so the
+        per-page mounts some pages also carry are harmless) */}
+    <ProgressBridge />
     <div class="app" id="app">
       <!-- collapsed strip (desktop) — visibility driven by html[data-rail] -->
       <div class="strip">

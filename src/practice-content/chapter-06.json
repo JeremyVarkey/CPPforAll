@@ -1,0 +1,86 @@
+{
+  "chapter": 6,
+  "drills": [
+    {
+      "id": "c06-d1",
+      "lesson": "62--arithmetic-operators",
+      "tier": "predict",
+      "title": "Integer division into a double",
+      "promptMd": "What does this program print? Commit to an answer before reasoning through it.",
+      "code": "#include <iostream>\n\nint main()\n{\n    int numerator   { 3 };\n    int denominator { 4 };\n\n    double result = numerator / denominator;\n\n    std::cout << result << '\\n';\n\n    return 0;\n}",
+      "choices": [
+        "0.75",
+        "0",
+        "0.0",
+        "compile error"
+      ],
+      "answer": 1,
+      "explanationMd": "Both operands of `/` are `int`, so C++ performs integer division first — `3 / 4` is `0` with the fraction discarded — and only *then* widens that `0` to `0.0` for storage in `result`. The type of the destination variable has no effect on how the division is computed; to get `0.75`, you must cast at least one operand *before* dividing: `static_cast<double>(numerator) / denominator`."
+    },
+    {
+      "id": "c06-d2",
+      "lesson": "63--remainder-and-exponentiation",
+      "tier": "predict",
+      "title": "Remainder and negative numbers",
+      "promptMd": "Both `a` and `b` test whether `x` is odd. What does this print?",
+      "code": "#include <iostream>\n\nint main()\n{\n    int x { -7 };\n\n    bool a { (x % 2) == 1  };\n    bool b { (x % 2) != 0  };\n\n    std::cout << a << ' ' << b << '\\n';\n\n    return 0;\n}",
+      "choices": [
+        "1 1",
+        "0 0",
+        "0 1",
+        "1 0"
+      ],
+      "answer": 2,
+      "explanationMd": "In C++, the result of `%` takes the sign of the *left* operand, so `-7 % 2` is `-1`, not `1`. Therefore `a` (`-1 == 1`) is `false` (prints `0`), while `b` (`-1 != 0`) is `true` (prints `1`). The safe idiom for an oddness test is always `!= 0`; the `== 1` form silently fails for any negative odd number."
+    },
+    {
+      "id": "c06-d3",
+      "lesson": "64--incrementdecrement-operators-and-side-effects",
+      "tier": "predict",
+      "title": "Prefix vs postfix: what value is captured?",
+      "promptMd": "Trace `x` carefully through both increments. What does this print?",
+      "code": "#include <iostream>\n\nint main()\n{\n    int x { 10 };\n    int a { x++ };\n    int b { ++x };\n\n    std::cout << a << ' ' << b << '\\n';\n\n    return 0;\n}",
+      "choices": [
+        "10 11",
+        "11 12",
+        "10 12",
+        "11 11"
+      ],
+      "answer": 2,
+      "explanationMd": "`x++` (postfix) copies the *old* value of `x` (10) into `a` and then increments `x` to 11. `++x` (prefix) increments `x` to 12 first and then copies the *new* value (12) into `b`. The key distinction: postfix yields the value before the change; prefix yields the value after. After both lines, `x` itself is 12."
+    },
+    {
+      "id": "c06-d4",
+      "lesson": "63--remainder-and-exponentiation",
+      "tier": "fix",
+      "title": "Fix the oddness test for negative numbers",
+      "promptMd": "The function returns wrong results for negative odd numbers. Fix it so all tests pass.",
+      "code": "// isOdd: returns true when x is odd, false when even.\nbool isOdd(int x)\n{\n    return (x % 2) == 1;\n}",
+      "harness": "#include <iostream>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n\nbool isOdd(int x);\n\nint main()\n{\n    CHECK(isOdd(1)  == true);\n    CHECK(isOdd(2)  == false);\n    CHECK(isOdd(3)  == true);\n    CHECK(isOdd(0)  == false);\n    CHECK(isOdd(-1) == true);\n    CHECK(isOdd(-2) == false);\n    CHECK(isOdd(-7) == true);\n\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// isOdd: returns true when x is odd, false when even.\nbool isOdd(int x)\n{\n    return (x % 2) != 0;\n}",
+      "explanationMd": "C++'s `%` gives a result with the sign of the left operand, so `-7 % 2` is `-1` — which is not `== 1`, causing `isOdd(-7)` to return `false`. Replacing `== 1` with `!= 0` fixes this: any non-zero remainder, whether `1` or `-1`, correctly signals an odd number."
+    },
+    {
+      "id": "c06-d5",
+      "lesson": "67--relational-operators-and-floating-point-comparisons",
+      "tier": "fix",
+      "title": "Fix floating-point equality",
+      "promptMd": "The function ignores its `epsilon` parameter entirely. Fix it so `0.1 + 0.2` compares equal to `0.3` within the given tolerance.",
+      "code": "#include <cmath>\n\n// approxEqual: returns true when a and b differ by no more than epsilon.\nbool approxEqual(double a, double b, double epsilon)\n{\n    return (a - b) == 0.0;\n}",
+      "harness": "#include <iostream>\n#include <cmath>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n#define CHECK_NEAR(a, b, eps) CHECK(std::abs((a)-(b)) <= (eps))\n\nbool approxEqual(double a, double b, double epsilon);\n\nint main()\n{\n    CHECK(approxEqual(1.0, 1.0, 1e-9) == true);\n    CHECK(approxEqual(1.0, 1.0 + 1e-10, 1e-9) == true);\n    CHECK(approxEqual(0.1 + 0.2, 0.3, 1e-9) == true);\n    CHECK(approxEqual(1.0, 2.0, 1e-9) == false);\n    CHECK(approxEqual(1.0, 1.1, 1e-9) == false);\n\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "#include <cmath>\n\n// approxEqual: returns true when a and b differ by no more than epsilon.\nbool approxEqual(double a, double b, double epsilon)\n{\n    return std::abs(a - b) <= epsilon;\n}",
+      "explanationMd": "Because most decimal fractions cannot be represented exactly in binary, `0.1 + 0.2` and `0.3` differ by a tiny rounding error — so `== 0.0` returns `false` even when they are conceptually equal. The fix is to compare the *magnitude* of the difference (`std::abs(a - b)`) against the tolerance `epsilon` using `<=`; using `<=` instead of `<` also allows an `epsilon` of `0` to still report truly identical values as equal."
+    },
+    {
+      "id": "c06-d6",
+      "lesson": "62--arithmetic-operators",
+      "tier": "write",
+      "title": "Write clampedPercentage",
+      "promptMd": "Implement `clampedPercentage(covered, total)`: return coverage as a percentage in `[0.0, 100.0]`, or `0.0` when `total <= 0`. Watch out for integer division.",
+      "code": "// clampedPercentage: given a count of covered items out of total,\n// return the coverage as a percentage in [0.0, 100.0].\n// Return 0.0 if total <= 0.\ndouble clampedPercentage(int covered, int total)\n{\n    // >>> YOUR CODE HERE <<<\n    return 0.0;\n}",
+      "harness": "#include <iostream>\n#include <cmath>\nstatic int fails = 0;\n#define CHECK(cond) do { if(!(cond)){ std::cerr<<\"FAIL: \"#cond\" @line \"<<__LINE__<<\"\\n\"; ++fails; } } while(0)\n#define CHECK_NEAR(a, b, eps) CHECK(std::abs((a)-(b)) <= (eps))\n\ndouble clampedPercentage(int covered, int total);\n\nint main()\n{\n    CHECK_NEAR(clampedPercentage(3, 4),   75.0,         1e-9);\n    CHECK_NEAR(clampedPercentage(10, 10), 100.0,        1e-9);\n    CHECK_NEAR(clampedPercentage(0, 10),  0.0,          1e-9);\n    CHECK_NEAR(clampedPercentage(5, 0),   0.0,          1e-9);\n    CHECK_NEAR(clampedPercentage(0, 0),   0.0,          1e-9);\n    CHECK_NEAR(clampedPercentage(1, 3),   33.333333333, 1e-6);\n\n    if (!fails)\n        std::cout << \"PASS\\n\";\n    return fails ? 1 : 0;\n}",
+      "solution": "// clampedPercentage: given a count of covered items out of total,\n// return the coverage as a percentage in [0.0, 100.0].\n// Return 0.0 if total <= 0.\ndouble clampedPercentage(int covered, int total)\n{\n    if (total <= 0)\n        return 0.0;\n\n    return (static_cast<double>(covered) / total) * 100.0;\n}",
+      "explanationMd": "The guard `if (total <= 0) return 0.0;` prevents division by zero and handles a degenerate total. The cast `static_cast<double>(covered)` promotes the numerator to `double` *before* the division, so C++ performs floating-point division and preserves the fraction; without the cast, `1 / 3` would be `0` via integer division and the result would always be a whole-number percentage."
+    }
+  ]
+}

@@ -29,6 +29,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { syntaxHighlighting, HighlightStyle, indentUnit } from '@codemirror/language';
 import { cpp } from '@codemirror/lang-cpp';
 import { tags as t } from '@lezer/highlight';
+import { markLabGreen } from '../lib/progress';
 
 /* ---- Props (from the Astro page; mirrors the drill `files[]` shape) -------- */
 type DrillFile = {
@@ -420,6 +421,19 @@ export default function ExerciseRunner({ chapter, files, project }: Props) {
         const data = (await res.json()) as RunResponse;
         setResult(data);
         setStatus('done');
+        // R1 green hook: a green SUBMIT verdict records lab completion and
+        // notifies the rail / progress map to repaint. (Idempotent: markLabGreen
+        // keeps the first timestamp; the event just triggers a UI refresh.)
+        if (mode === 'submit' && data.overall === 'green') {
+          try {
+            markLabGreen(chapter);
+          } catch {
+            /* progress bookkeeping must never break the runner */
+          }
+          window.dispatchEvent(
+            new CustomEvent('cppforall:lab-green', { detail: { chapter } }),
+          );
+        }
         // Auto-open the console for any failing/erroring step.
         const firstBad = data.steps.findIndex((s) => s.verdict !== 'pass');
         if (firstBad >= 0) setOpenConsole({ [firstBad]: true });
