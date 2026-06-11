@@ -14,18 +14,15 @@ genuinely useful to anyone. Core values, in order: **free, structured, accessibl
 - **Domain:** registered via Squarespace (DNS to be pointed at the host at deploy time)
 - **Local path:** `~/Desktop/CPPforAll`
 
-## Scope — phased
-**Phase 1 (current MVP): static site.**
-- Render every chapter's **notes** as web pages (sidebar nav, search, dark mode).
-- Show each chapter's **exercise** (handout + starter/solution/tests) as **copy / paste /
-  download** code blocks. No execution yet.
-- Goal: immediately useful for reading + grabbing the exercises; ships at ~$0.
+## Scope — current state (June 2026)
+**SHIPPED and live at https://cppforall.com:** 29 authored chapters (lecture-grade,
+validated) · 28 labs with in-browser editor + Run/Submit against the server judge
+(red→green grading, ~1.4s warm) · instant chapter navigation · scrollspy TOC ·
+solution panes gated behind "Reveal solution" ("try first" policy).
 
-**Phase 2 (later): embedded runtime.** Run the exercise in-browser (LeetCode-style),
-grade red→green. Architecture deferred — **client-side WASM (Clang→WASM, ~$0, scales,
-no server abuse surface)** vs **server-side judge (Judge0/Piston on Azure, full fidelity,
-costs + security burden)**. Design Phase-1 UI as interactive "islands" so a Run/Submit
-button can slot in **without a rewrite**.
+**Next:** see `docs/roadmap.md` (positioning, four pillars, R1–R7 phases; next-phase
+decision currently OPEN). Engineering record of the runner architecture decision:
+`docs/runner-plan.md`.
 
 ## Tech decisions
 - **Framework:** plain Astro + React islands (**Starlight dropped** — the bespoke Claude
@@ -121,22 +118,29 @@ Each `drills/chapter-NN/` exercise has a fixed shape:
   wires the grader to a Run/Submit button.
 
 ## Open flags / decisions pending
-- **Licensing (before go-live):** public repo → notes must be Jeremy's **own synthesis**,
-  not LearnCpp's copyrighted prose. Do an originality pass before publishing.
-- **Phase-2 runtime architecture:** WASM vs server judge (see Scope). Deferred.
-- **Test visibility:** consider hiding/obscuring `tests/` on the public site later so
-  answers can't be hardcoded (matters mainly once Run/Submit exists).
+- **Next roadmap phase:** OPEN — see `docs/roadmap.md` (candidate: R1 progress map +
+  R2 micro-drills).
+- **Judge ops (R4):** rate limiting is in-memory per replica (resets on cold start,
+  multiplies with replicas — currently bounded by maxReplicas). Before real traffic:
+  App Insights dashboards, durable per-IP daily quotas, budget alerts, "under attack"
+  dial. Tracked in the roadmap.
+- **www.cppforall.com:** registered + CNAME correct; Azure cert issuance was still
+  pending as of 2026-06-10 — re-check `az staticwebapp hostname list`.
+
+## Resolved decisions (for the record)
+- **Licensing:** originality pass done pre-launch (sampled LearnCpp phrases × all 29
+  notes, zero hits). Site content is original synthesis + authored rewrite.
+- **Runtime architecture:** server judge won (B0 spike falsified in-browser WASM clang
+  — ~25KB/s; see docs/runner-plan.md). Revisit only if wasm toolchains get ~10× faster.
+- **Test/solution visibility:** repo is public by design; grading integrity lives in
+  the judge (server-side tests, solutions stripped from the serving image). On-site,
+  solutions sit behind a "Reveal solution" gate; tests stay readable (pedagogy).
+- **Repo visibility:** public, deliberately (mission fit; secrets live in GitHub/Azure;
+  openness compounds). User-data services (future accounts) stay in Azure regardless.
 
 ## Conventions
 - Push as Jeremy via the authenticated `gh` CLI (scopes `repo` + `workflow`). No separate
   collaborator to add.
 - Branch off `main` for changes; commit/push only when asked.
-- Keep this file updated when decisions change.
-
-## Status
-- [x] Repo cloned to `~/Desktop/CPPforAll`, this guide created.
-- [x] Azure DNS zone `cppforall.com` created on the VS Enterprise sub; NS delegation live (Azure authoritative).
-- [ ] Scaffold Astro + Starlight.
-- [ ] Wire **chapter 1 end-to-end** as the template (notes page + exercise code boxes).
-- [x] Sync script `scripts/sync-content.sh` → vendored 29 notes + 28 drills into `content/`.
-- [ ] Render locally for review, then provision SWA + point the domain.
+- Keep this file updated when decisions change. README.md is the public-facing intro;
+  this file is the operating guide for agents.

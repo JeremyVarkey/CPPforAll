@@ -262,6 +262,11 @@ export default function ExerciseRunner({ chapter, files, project }: Props) {
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [phase, setPhase] = useState<'probing' | 'offline' | 'active'>('probing');
   const [active, setActive] = useState(0); // active tab index
+  // "try first": solution panes blur until deliberately revealed (per chapter+session,
+  // same key the static page uses so the choice carries across both surfaces)
+  const [solutionRevealed, setSolutionRevealed] = useState(() => {
+    try { return sessionStorage.getItem(`cppforall:reveal:c${chapter}`) === '1'; } catch { return false; }
+  });
   const [docs, setDocs] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<RunStatus>('idle');
   const [lastMode, setLastMode] = useState<'run' | 'submit' | null>(null);
@@ -474,6 +479,11 @@ export default function ExerciseRunner({ chapter, files, project }: Props) {
   /* ---- render: ACTIVE (island owns tabs + editor + run UI) ------------ */
   const running = status === 'busy' || status === 'warming';
   const activeFile = files[active];
+  const revealKey = `cppforall:reveal:c${chapter}`;
+  const revealSolution = () => {
+    try { sessionStorage.setItem(revealKey, '1'); } catch {}
+    setSolutionRevealed(true);
+  };
 
   return (
     <>
@@ -502,6 +512,7 @@ export default function ExerciseRunner({ chapter, files, project }: Props) {
         {/* Editor panes — one CodeMirror per file, only the active is shown. */}
         {files.map((f, i) => {
           const editable = isEditable(f.path);
+          const gated = f.kind === 'solution' && !solutionRevealed;
           return (
             <div className="file-pane" key={f.path} hidden={i !== active}>
               <div className="codebox er-codebox">
@@ -521,14 +532,22 @@ export default function ExerciseRunner({ chapter, files, project }: Props) {
                     )}
                   </div>
                 </div>
-                <CodeEditor
-                  value={docs[f.path] ?? f.code}
-                  readOnly={!editable}
-                  onChange={editable ? (text) => handleEdit(f.path, text) : undefined}
-                  viewRef={(v) => {
-                    editorViews.current[f.path] = v;
-                  }}
-                />
+                <div className={'er-body' + (gated ? ' gated' : '')} data-gate={f.kind === 'solution' ? `c${chapter}` : undefined}>
+                  {gated && (
+                    <div className="gate-cover">
+                      <p>Try the lab first — the learning is in the attempt.</p>
+                      <button className="btn btn-ghost gate-reveal" onClick={revealSolution}>Reveal solution</button>
+                    </div>
+                  )}
+                  <CodeEditor
+                    value={docs[f.path] ?? f.code}
+                    readOnly={!editable}
+                    onChange={editable ? (text) => handleEdit(f.path, text) : undefined}
+                    viewRef={(v) => {
+                      editorViews.current[f.path] = v;
+                    }}
+                  />
+                </div>
               </div>
             </div>
           );

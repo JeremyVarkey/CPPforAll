@@ -116,7 +116,13 @@ const langLabel = (l: string | null) => (l === 'cpp' ? 'C++' : l === 'make' ? 'M
                 </button>
               </div>
             </div>
-            <div class="codebox-body">
+            <div class="codebox-body" data-gate={f.kind === 'solution' ? `c${chapter.num}` : undefined}>
+              {f.kind === 'solution' && (
+                <div class="gate-cover">
+                  <p>Try the lab first — the learning is in the attempt.</p>
+                  <button class="btn btn-ghost gate-reveal" data-gate-reveal={`c${chapter.num}`}>Reveal solution</button>
+                </div>
+              )}
               <pre set:html={f.codeHtml} />
             </div>
           </div>
@@ -139,6 +145,31 @@ const langLabel = (l: string | null) => (l === 'cpp' ? 'C++' : l === 'make' ? 'M
     <ExerciseRunner client:only="react" chapter={chapter.num} files={files} project={drill.project} />
   </div>
 </AppShell>
+
+<script is:inline>
+  /* solution gate: blur until deliberately revealed (per chapter, per session) */
+  (function () {
+    function apply() {
+      document.querySelectorAll('[data-gate]').forEach(function (body) {
+        var key = 'cppforall:reveal:' + body.dataset.gate;
+        var revealed = false;
+        try { revealed = sessionStorage.getItem(key) === '1'; } catch (e) {}
+        body.classList.toggle('gated', !revealed);
+      });
+    }
+    if (!window.__cppGateWired) {
+      window.__cppGateWired = true;
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-gate-reveal]');
+        if (!btn) return;
+        try { sessionStorage.setItem('cppforall:reveal:' + btn.dataset.gateReveal, '1'); } catch (err) {}
+        apply();
+      });
+      document.addEventListener('astro:page-load', apply);
+    }
+    apply();
+  })();
+</script>
 
 <style>
   .ex-prose :global(p){font-family:var(--serif);font-size:15px;line-height:1.6;color:var(--ink);margin:0 0 10px;}

@@ -9,14 +9,4 @@ export default defineConfig({
   integrations: [react(), sitemap()],
   // instant chapter switching: hover/viewport prefetch of rail links
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
-  vite: {
-    server: {
-      // cross-origin isolation in dev — the Wasmer toolchain needs SharedArrayBuffer
-      headers: {
-        'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp',
-      },
-    },
-    optimizeDeps: { exclude: ['@wasmer/sdk'] },
-  },
 });
