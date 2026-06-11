@@ -1,7 +1,7 @@
 ---
 /**
  * Practice page — the third view: lesson-grouped micro-drill cards (predict /
- * fix / write), one PracticeDrill island per drill (client:visible, lazy).
+ * fix / write), one PracticeDrill island per drill (client:idle, lazy).
  *
  * getStaticPaths emits a route ONLY for chapters that have a generated practice
  * JSON (src/generated/practice/chapter-NN.json). Authoring agents run
@@ -105,7 +105,7 @@ const tierLabel = (t: string) => t; // predict | fix | write (kindtag visual idi
         </h2>
         <div class="pr-cards">
           {g.drills.map((d) => (
-            <PracticeDrill client:visible chapter={chapter.num} drill={d} />
+            <PracticeDrill client:idle chapter={chapter.num} drill={d} />
           ))}
         </div>
       </section>
