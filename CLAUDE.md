@@ -91,9 +91,15 @@ On the **Visual Studio Enterprise Subscription** (Option B — always pass `--su
   `AZURE_STATIC_WEB_APPS_API_TOKEN`; rotate via `az staticwebapp secrets`).
 - **LIVE: https://cppforall.com** (launched 2026-06-10). Apex = Azure DNS alias A record →
   the SWA resource; TXT `_dnsauth` validation; DigiCert managed TLS. `www` = CNAME to the
-  default hostname (validation/cert auto-completing). Note: SWA cannot do host-based
-  redirects, so www serves the same content rather than 301ing — canonical tags point at
-  the apex, which handles SEO. Licensing gate passed pre-launch (sampled originality
+  default hostname — **both Ready with valid DigiCert certs** (www's validation got stuck
+  for days; fix was delete + re-add the SWA hostname, 2026-06-11). Note: SWA cannot do
+  host-based redirects, so www serves the same content rather than 301ing — canonical tags
+  point at the apex, which handles SEO.
+- **Analytics:** Azure Application Insights `cppforall-insights` (rg-cppforall). Web SDK
+  loads async from the MS CDN via `src/components/Analytics.astro` (conn string is a public
+  ingestion key — `PUBLIC_APPINSIGHTS_CONNECTION_STRING` in deploy.yml + .env.example).
+  Tracks pageviews + the `lab_green` custom event (north-star). View: Portal →
+  cppforall-insights → Usage / Logs (`pageViews | summarize count() by bin(timestamp,1d)`). Licensing gate passed pre-launch (sampled originality
   check: 10 distinctive LearnCpp phrases × 29 notes files, zero hits).
 - Lighthouse (chapter page): performance 98 · a11y 96 · best-practices 100 · SEO 100.
   Pages ship ZERO framework JS (rail search is vanilla; React arrives only with the
