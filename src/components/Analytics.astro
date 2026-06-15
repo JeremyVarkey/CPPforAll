@@ -1,0 +1,40 @@
+---
+/**
+ * Analytics.astro — privacy-light web analytics via Azure Application Insights.
+ *
+ * The connection string is a PUBLIC ingestion key (write-only telemetry, like a
+ * GA tag) — safe to embed in client JS. Renders nothing when unset (local dev /
+ * forks stay clean). The SDK loads async from the Microsoft CDN, so it adds zero
+ * weight to our own bundle. Tracks pageviews (including soft navigations via
+ * enableAutoRouteTracking, since ClientRouter uses History pushState) plus the
+ * `lab_green` product event (our north-star: a learner turned a lab green).
+ */
+const conn = import.meta.env.PUBLIC_APPINSIGHTS_CONNECTION_STRING;
+const snippet = conn
+  ? `(function(){
+  if (window.__cppAI) return; window.__cppAI = true;
+  var s = document.createElement('script');
+  s.src = 'https://js.monitor.azure.com/scripts/b/ai.3.gbl.min.js';
+  s.async = true; s.crossOrigin = 'anonymous';
+  s.onload = function(){
+    try {
+      var ns = window.Microsoft && window.Microsoft.ApplicationInsights;
+      if (!ns || !ns.ApplicationInsights) return;
+      var ai = new ns.ApplicationInsights({ config: {
+        connectionString: ${JSON.stringify(conn)},
+        enableAutoRouteTracking: true
+      }});
+      ai.loadAppInsights();
+      ai.trackPageView();
+      window.appInsights = ai;
+      window.addEventListener('cppforall:lab-green', function(e){
+        try { ai.trackEvent({ name: 'lab_green' }, { chapter: e && e.detail && e.detail.chapter }); } catch (x) {}
+      });
+    } catch (err) {}
+  };
+  document.head.appendChild(s);
+})();`
+  : null;
+---
+
+{snippet && <script is:inline set:html={snippet} />}
